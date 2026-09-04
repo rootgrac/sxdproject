@@ -90,17 +90,36 @@ export class BattleGameBoot extends Component {
           else resolve((asset as JsonAsset).json);
         });
       });
+    // 全部配置表（与 config/export 同步，共 12 个）
     return Promise.all([
       load('config/unit'),
       load('config/skill'),
       load('config/skill_effect'),
       load('config/stage'),
-    ]).then(([units, skills, effectRows, stages]) => ({
-      units: units as GameConfigs['units'],
-      skills: skills as GameConfigs['skills'],
-      effectRows: effectRows as GameConfigs['effectRows'],
-      stages: stages as GameConfigs['stages'],
-    }));
+      load('config/recruit'),
+      load('config/recruit_cfg'),
+      load('config/equip'),
+      load('config/item'),
+      load('config/craft'),
+      load('config/shop'),
+      load('config/elite'),
+      load('config/elite_reward'),
+    ]).then(
+      ([units, skills, effectRows, stages, recruit, recruitCfg, equip, item, craft, shop, elite, eliteReward]) => ({
+        units: units as GameConfigs['units'],
+        skills: skills as GameConfigs['skills'],
+        effectRows: effectRows as GameConfigs['effectRows'],
+        stages: stages as GameConfigs['stages'],
+        recruit: recruit as GameConfigs['recruit'],
+        recruitCfg: recruitCfg as GameConfigs['recruitCfg'],
+        equip: equip as GameConfigs['equip'],
+        item: item as GameConfigs['item'],
+        craft: craft as GameConfigs['craft'],
+        shop: shop as GameConfigs['shop'],
+        elite: elite as GameConfigs['elite'],
+        eliteReward: eliteReward as GameConfigs['eliteReward'],
+      }),
+    );
   }
 
   // ── UI 基建 ───────────────────────────────────────────────
