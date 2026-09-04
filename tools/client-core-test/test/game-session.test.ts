@@ -51,7 +51,20 @@ const STAGE_ROWS = [
   { id: '1_3', chapter: 1, node: 3, name: '断桥遗冢', enemies: ['e001'], exp_reward: 75, copper_reward: 150 },
 ];
 
-const CFG: GameConfigs = { units: UNIT_ROWS, skills: SKILL_ROWS, effectRows: EFFECT_ROWS, stages: STAGE_ROWS };
+const CFG: GameConfigs = {
+  units: UNIT_ROWS,
+  skills: SKILL_ROWS,
+  effectRows: EFFECT_ROWS,
+  stages: STAGE_ROWS,
+  recruit: [],
+  recruitCfg: { cost_single: 800, cost_ten: 7200, guarantee_rarity: 2 },
+  equip: [],
+  item: [],
+  craft: [],
+  shop: [],
+  elite: [],
+  eliteReward: [],
+};
 
 function mk(): { kv: MemoryKV; session: GameSession } {
   const kv = new MemoryKV();
