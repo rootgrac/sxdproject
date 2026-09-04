@@ -15,8 +15,8 @@ S7 主线第一章（关卡/掉落/扫荡待 M1 后半）｜ S8 背包货币最�
 | M1-1 | 导表工具：表头三行约定、TSV 源解析、类型转换、校验（主键/引用/枚举）、JSON 导出 | §3.6 | M | ✅ 2026-09-04（6 项单测；CLI `node tools/excel2json/src/run.ts`） |
 | M1-2 | 示例配置表入仓库（unit/skill/stage…），导出 JSON 进 Git | §3.6 | S | ✅ unit/skill 示例（3 行表头、跨表 ref 校验）→ config/export/*.json |
 | M1-3 | 配置加载层：battle-core 阵容/技能由配置驱动（makeUnit → 表数据） | §3.4/3.6 | M | ✅ 2026-09-04：setup.ts（unit/skill 行 → Unit[]，绝技倍率注入）；unit 表扩至 6 行；demo 读配置；3 项新单测（提交 88232e7） |
-| M1-4 | 存档接入：战斗结束/通关 → SaveManager.flushNow；进度写档 + 读档恢复 | §3.5-1 | M | — |
-| M1-5 | 3×3 布阵数据模型与站位加成（内核侧），UI 拖拽待编辑器轮 | §S3 | M | — |
+| M1-4 | 存档接入：战斗结束/通关 → SaveManager.flushNow；进度写档 + 读档恢复 | §3.5-1 | M | ✅ 2026-09-04（逻辑层）：KV 版 SlotManager（3 槽+auto）+ GameSession 会话控制器（newGame/continue/currentStage/buildBattle/onBattleWin 即写盘）7 项单测；配置同步进 client resources；引擎 UI（BattleGameBoot）待装配轮 |
+| M1-5 | 3×3 布阵数据模型与站位加成（内核侧），UI 拖拽待编辑器轮 | §S3 | M | ✅ 2026-09-04（内核侧）：Unit.position + 列优先目标选择 + frontDef/backAtk 加成（默认关闭）；5 项单测（提交 460bad8）；UI 布阵面板并入 M1-4 联调轮 |
 | M1-6 | 技能效果器配置驱动：伤害段/治疗/增益/减益（代码内 effect 注册表） | §S3 | L | ✅ 2026-09-04：skill_effect 表 + 内核效果器执行（cast/effect 事件流、buff 乘区回合制、治疗）；buildEffects；5 项单测（提交 9eb65ca） |
 | M1-7 | 角色养成：等级/经验、境界链、战力公式（纯逻辑 + 存档字段） | §S2 | M | ✅ 2026-09-04（逻辑部分）：`modules/role/role-core.ts`（连升/境界门槛/战力占位；RoleState 与存档 player 字段对齐）6 项单测；引擎/存档联动并入 M1-4 |
 | M1-8 | 主线第一章 10 关：关卡表 + 推进逻辑 + 奖励（货币/经验） | §S7/S8 | L | ✅ 2026-09-04（逻辑部分）：stage.tsv 10 关 + `stage-core.ts`（结算/推进/章节完成）+ 4 项单测；demo 打通第一章演示（重试机制）；引擎 UI 并入 M1-4 联调 |

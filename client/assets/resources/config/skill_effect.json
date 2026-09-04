@@ -1,0 +1,32 @@
+[
+  {
+    "id": "se_1",
+    "skill": "sk_qi",
+    "kind": "damage",
+    "target": "enemy",
+    "ratio": 1.8,
+    "stat": "",
+    "value": 0,
+    "duration": 0
+  },
+  {
+    "id": "se_2",
+    "skill": "sk_guard",
+    "kind": "buff",
+    "target": "self",
+    "ratio": 0,
+    "stat": "def",
+    "value": 0.5,
+    "duration": 3
+  },
+  {
+    "id": "se_3",
+    "skill": "sk_heal",
+    "kind": "heal",
+    "target": "self",
+    "ratio": 1.5,
+    "stat": "",
+    "value": 0,
+    "duration": 0
+  }
+]

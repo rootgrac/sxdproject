@@ -1,0 +1,125 @@
+[
+  {
+    "id": "1_1",
+    "chapter": 1,
+    "node": 1,
+    "name": "山道初行",
+    "enemies": "u004",
+    "exp_reward": 50,
+    "copper_reward": 100
+  },
+  {
+    "id": "1_2",
+    "chapter": 1,
+    "node": 2,
+    "name": "雾林小径",
+    "enemies": [
+      "u004",
+      "u005"
+    ],
+    "exp_reward": 60,
+    "copper_reward": 120
+  },
+  {
+    "id": "1_3",
+    "chapter": 1,
+    "node": 3,
+    "name": "断桥遗冢",
+    "enemies": [
+      "u004",
+      "u005"
+    ],
+    "exp_reward": 75,
+    "copper_reward": 150
+  },
+  {
+    "id": "1_4",
+    "chapter": 1,
+    "node": 4,
+    "name": "荒祠夜影",
+    "enemies": [
+      "u005",
+      "u006"
+    ],
+    "exp_reward": 90,
+    "copper_reward": 180
+  },
+  {
+    "id": "1_5",
+    "chapter": 1,
+    "node": 5,
+    "name": "岩台守望",
+    "enemies": [
+      "u004",
+      "u005",
+      "u006"
+    ],
+    "exp_reward": 110,
+    "copper_reward": 220
+  },
+  {
+    "id": "1_6",
+    "chapter": 1,
+    "node": 6,
+    "name": "溪谷伏击",
+    "enemies": [
+      "u004",
+      "u005",
+      "u006"
+    ],
+    "exp_reward": 130,
+    "copper_reward": 260
+  },
+  {
+    "id": "1_7",
+    "chapter": 1,
+    "node": 7,
+    "name": "古藤迷障",
+    "enemies": [
+      "u004",
+      "u005",
+      "u006"
+    ],
+    "exp_reward": 150,
+    "copper_reward": 300
+  },
+  {
+    "id": "1_8",
+    "chapter": 1,
+    "node": 8,
+    "name": "坠星潭",
+    "enemies": [
+      "u004",
+      "u005",
+      "u006"
+    ],
+    "exp_reward": 180,
+    "copper_reward": 360
+  },
+  {
+    "id": "1_9",
+    "chapter": 1,
+    "node": 9,
+    "name": "铁衣营外",
+    "enemies": [
+      "u004",
+      "u005",
+      "u006"
+    ],
+    "exp_reward": 210,
+    "copper_reward": 420
+  },
+  {
+    "id": "1_10",
+    "chapter": 1,
+    "node": 10,
+    "name": "黑风当头",
+    "enemies": [
+      "u004",
+      "u005",
+      "u006"
+    ],
+    "exp_reward": 300,
+    "copper_reward": 600
+  }
+]
