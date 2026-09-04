@@ -1,0 +1,10 @@
+# 成就表（M3-6：达标自动解锁并发系统邮件发放奖励）
+
+id	name	desc	type	target	reward_copper
+str	str	str	str	int	int
+成就ID	名称	描述	条件类型(level/realm/partners/fates/honor)	目标值	奖励铜钱
+a1	初窥门径	主角达到 Lv5	level	5	1000
+a2	凝元有成	突破到凝元境	realm	1	2000
+a3	初组队伍	拥有 1 名伙伴	partners	1	1000
+a4	星命初启	拥有 3 枚命格	fates	3	1000
+a5	竞技新秀	荣誉达到 100	honor	100	2000

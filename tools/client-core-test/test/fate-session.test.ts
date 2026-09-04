@@ -53,6 +53,8 @@ const CFG: GameConfigs = {
   ],
   fateSet: [{ id: 's1', set_id: 1, need: 2, stat: 'atk', value: 30 }],
   fateCfg: { cost_single: 600, cost_ten: 5400, guarantee_rarity: 2 },
+  arena: [],
+  achievements: [],
 };
 
 test('观星：扣费、新命格自动装配、重复精进 +1、加成入战斗并持久化', () => {

@@ -25,7 +25,7 @@ import {
 } from 'node:fs';
 import { join } from 'node:path';
 
-export const CURRENT_SAVE_VERSION = 6;
+export const CURRENT_SAVE_VERSION = 7;
 
 export interface SaveMeta {
   createdAt: number;
@@ -42,6 +42,8 @@ export interface PlayerData {
   gold: number;
   stamina: number;
   staminaTs: number;
+  /** 荣誉（竞技场胜场奖励；v7 起） */
+  honor: number;
 }
 
 export interface SaveData {
@@ -74,7 +76,7 @@ export function createSaveData(name = '无名散修'): SaveData {
   return {
     saveVersion: CURRENT_SAVE_VERSION,
     meta: { createdAt: now, playtimeSec: 0, lastSavedAt: now },
-    player: { name, level: 1, exp: 0, realm: 0, copper: 0, gold: 0, stamina: 0, staminaTs: now },
+    player: { name, level: 1, exp: 0, realm: 0, copper: 0, gold: 0, stamina: 0, staminaTs: now, honor: 0 },
     partners: [],
     equips: [],
     bag: [],
@@ -177,6 +179,15 @@ const migrations: Record<number, Migration> = {
     slots = slots.slice(0, 8);
     next.fates = fates;
     next.fateParty = { slots };
+    return next;
+  },
+  // v6 → v7：player 新增 honor（竞技场荣誉）
+  6: (raw) => {
+    const next = { ...raw, saveVersion: 7 };
+    const player = raw.player as { honor?: unknown } | undefined;
+    const p = { ...(raw.player as Record<string, unknown>) };
+    if (!p.honor) p.honor = typeof player?.honor === 'number' ? player.honor : 0;
+    next.player = p as never;
     return next;
   },
 

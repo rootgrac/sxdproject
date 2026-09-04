@@ -44,6 +44,10 @@ import type { SignInRow } from '../task/signin-core';
 import { addFateOrEvolve, autoEquip, equippedFates, sumFateBonus } from '../fate/fate-core';
 import { sumBonus } from '../equip/equip-core';
 import type { EquipDefRow } from '../equip/equip-core';
+import { arenaRemaining, arenaWinsToday, recordArenaWin, scaleUnitRows } from '../arena/arena-core';
+import type { ArenaRow } from '../arena/arena-core';
+import { scanAchievements } from '../achievement/achievement-core';
+import type { AchievementRow, AchievementStats } from '../achievement/achievement-core';
 import type { FateCfgRow, FateDefRow, FateSetRow, FateState } from '../fate/fate-core';
 import type { EquipState } from '../equip/equip-core';
 
@@ -67,6 +71,8 @@ export interface GameConfigs {
   fate: FateDefRow[];
   fateSet: FateSetRow[];
   fateCfg: FateCfgRow;
+  arena: ArenaRow[];
+  achievements: AchievementRow[];
 }
 
 /** 主角固定 unit */
@@ -248,22 +254,22 @@ export class GameSession {
     return buildUnits(rows, this.configs.skills, 'enemy').map((u, i) => ({ ...u, position: Math.min(i, 2) }));
   }
 
-  buildBattle(): { allies: Unit[]; enemies: Unit[] } | null {
-    const stage = this.currentStage();
-    if (!stage) return null;
+  /** 我方出阵（含主角装备/命格加成）——主线与竞技场共用 */
+  private battleAllies(): Unit[] {
     const allyRows = this.partyUnitRows();
-    // 主角携带装备与命格加成（M2/M3 养成入战斗；UnitRow 平铺字段）
     const heroB = this.heroBonuses();
     const first = allyRows[0];
     const boosted = first
-      ? [
-          { ...first, hp: first.hp + heroB.hp, atk: first.atk + heroB.atk, def: first.def + heroB.def },
-          ...allyRows.slice(1),
-        ]
+      ? [{ ...first, hp: first.hp + heroB.hp, atk: first.atk + heroB.atk, def: first.def + heroB.def }, ...allyRows.slice(1)]
       : allyRows;
-    const allies = buildUnits(boosted, this.configs.skills, 'ally').map((u, i) => ({ ...u, position: i }));
+    return buildUnits(boosted, this.configs.skills, 'ally').map((u, i) => ({ ...u, position: i }));
+  }
+
+  buildBattle(): { allies: Unit[]; enemies: Unit[] } | null {
+    const stage = this.currentStage();
+    if (!stage) return null;
     const enemyIds = Array.isArray(stage.enemies) ? stage.enemies : [stage.enemies];
-    return { allies, enemies: this.enemyUnits(enemyIds) };
+    return { allies: this.battleAllies(), enemies: this.enemyUnits(enemyIds) };
   }
 
   /** 主角养成加成（已穿装备 + 装配命格） */
@@ -583,5 +589,98 @@ export class GameSession {
     slots[index] = null;
     this.manager?.markDirty();
     this.flushNow();
+  }
+
+  // ── 竞技场（M3-5）────────────────────────────────────────
+
+  arenaStatus(): { id: string; name: string; scale: number; rewardCopper: number; honor: number }[] {
+    return this.configs.arena.map((a) => ({
+      id: a.id,
+      name: a.name,
+      scale: a.scale,
+      rewardCopper: a.reward_copper,
+      honor: a.honor,
+    }));
+  }
+
+  arenaRemainingToday(): number {
+    const daily = this.dailyOf();
+    rollDay(daily as DailyState, this.dateKeyOf());
+    return arenaRemaining(daily.elites);
+  }
+
+  /** 挑战镜像：返回战斗双方（次数不足抛错；胜负结算见 arenaWin/arenaLose） */
+  arenaBattle(id: string): { allies: Unit[]; enemies: Unit[] } {
+    const row = this.configs.arena.find((a) => a.id === id);
+    if (!row) throw new Error(`竞技场镜像不存在：${id}`);
+    if (this.arenaRemainingToday() <= 0) throw new Error('今日胜场已满，明日再来');
+    const ids = Array.isArray(row.units) ? row.units : [row.units];
+    const scaled = scaleUnitRows(this.configs.units, ids, row.scale);
+    const enemies = buildUnits(scaled, this.configs.skills, 'enemy').map((u, i) => ({ ...u, position: Math.min(i, 2) }));
+    return { allies: this.battleAllies(), enemies };
+  }
+
+  /** 竞技胜利：记录胜场 + 铜钱/荣誉奖励 + 成就扫描 */
+  arenaWin(id: string): { copper: number; honor: number; achievements: string[] } {
+    const data = this.guardData();
+    const row = this.configs.arena.find((a) => a.id === id);
+    if (!row) throw new Error(`竞技场镜像不存在：${id}`);
+    const daily = this.dailyOf();
+    rollDay(daily as DailyState, this.dateKeyOf());
+    recordArenaWin(daily.elites); // 上限校验
+    data.player.copper += row.reward_copper;
+    data.player.honor += row.honor;
+    const names = this.achievementScan();
+    this.manager?.markDirty();
+    this.flushNow();
+    return { copper: row.reward_copper, honor: row.honor, achievements: names };
+  }
+
+  arenaLose(): void {
+    // 败不扣胜场（可重试，同精英语义）
+  }
+
+  // ── 成就（M3-6）──────────────────────────────────────────
+
+  private achievementStats(): AchievementStats {
+    const data = this.guardData();
+    return {
+      level: data.player.level,
+      realm: data.player.realm,
+      partnerCount: (data.partners as PartnerState[]).length,
+      fateCount: (data.fates as FateState[]).length,
+      honor: data.player.honor,
+    };
+  }
+
+  /** 扫描并解锁新达标成就：奖励以系统邮件发放（邮箱领取），返回新达成名称 */
+  achievementScan(): string[] {
+    const data = this.guardData();
+    const unlocked = data.achievements.unlocked as string[];
+    const newly = scanAchievements(this.configs.achievements, unlocked, this.achievementStats());
+    const names: string[] = [];
+    for (const a of newly) {
+      unlocked.push(a.id);
+      names.push(a.name);
+      this.sendRewardMail(`ach_${a.id}`, `成就达成：${a.name}`, [{ kind: 'copper', count: a.reward_copper }]);
+    }
+    if (newly.length > 0) {
+      this.manager?.markDirty();
+      this.flushNow();
+    }
+    return names;
+  }
+
+  achievementView(): { id: string; name: string; desc: string; unlocked: boolean; done: boolean }[] {
+    const data = this.guardData();
+    const unlocked = data.achievements.unlocked as string[];
+    const stats = this.achievementStats();
+    return this.configs.achievements.map((a) => ({
+      id: a.id,
+      name: a.name,
+      desc: a.desc,
+      unlocked: unlocked.includes(a.id),
+      done: scanAchievements([a], [], stats).length > 0,
+    }));
   }
 }

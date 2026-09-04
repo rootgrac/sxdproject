@@ -1,0 +1,38 @@
+[
+  {
+    "id": "ar1",
+    "name": "新锐名将·玄一",
+    "units": [
+      "u004",
+      "u005",
+      "u006"
+    ],
+    "scale": 1,
+    "reward_copper": 800,
+    "honor": 40
+  },
+  {
+    "id": "ar2",
+    "name": "成名名将·青鸿",
+    "units": [
+      "u004",
+      "u005",
+      "u006"
+    ],
+    "scale": 1.2,
+    "reward_copper": 1200,
+    "honor": 60
+  },
+  {
+    "id": "ar3",
+    "name": "传说名将·暮雪",
+    "units": [
+      "u004",
+      "u005",
+      "u006"
+    ],
+    "scale": 1.4,
+    "reward_copper": 2000,
+    "honor": 100
+  }
+]

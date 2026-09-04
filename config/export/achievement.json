@@ -1,0 +1,42 @@
+[
+  {
+    "id": "a1",
+    "name": "初窥门径",
+    "desc": "主角达到 Lv5",
+    "type": "level",
+    "target": 5,
+    "reward_copper": 1000
+  },
+  {
+    "id": "a2",
+    "name": "凝元有成",
+    "desc": "突破到凝元境",
+    "type": "realm",
+    "target": 1,
+    "reward_copper": 2000
+  },
+  {
+    "id": "a3",
+    "name": "初组队伍",
+    "desc": "拥有 1 名伙伴",
+    "type": "partners",
+    "target": 1,
+    "reward_copper": 1000
+  },
+  {
+    "id": "a4",
+    "name": "星命初启",
+    "desc": "拥有 3 枚命格",
+    "type": "fates",
+    "target": 3,
+    "reward_copper": 1000
+  },
+  {
+    "id": "a5",
+    "name": "竞技新秀",
+    "desc": "荣誉达到 100",
+    "type": "honor",
+    "target": 100,
+    "reward_copper": 2000
+  }
+]

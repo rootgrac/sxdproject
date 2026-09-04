@@ -70,6 +70,8 @@ const CFG: GameConfigs = {
   fate: [],
   fateSet: [],
   fateCfg: { cost_single: 600, cost_ten: 5400, guarantee_rarity: 3 },
+  arena: [],
+  achievements: [],
 };
 
 function mk(): { kv: MemoryKV; session: GameSession } {

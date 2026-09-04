@@ -57,6 +57,8 @@ const CFG: GameConfigs = {
   fate: [],
   fateSet: [],
   fateCfg: { cost_single: 600, cost_ten: 5400, guarantee_rarity: 3 },
+  arena: [],
+  achievements: [],
   stages: [
     { id: '1_1', chapter: 1, node: 1, name: '山道初行', enemies: ['e001'], exp_reward: 50, copper_reward: 100 },
     { id: '1_2', chapter: 1, node: 2, name: '雾林小径', enemies: ['e002'], exp_reward: 60, copper_reward: 120 },

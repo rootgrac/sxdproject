@@ -1,0 +1,8 @@
+# 竞技场 AI 名将镜像（M3-5：镜像 = 敌模板 × scale；本地结算）
+
+id	name	units	scale	reward_copper	honor
+str	str	ref:unit.id	float	int	int
+镜像ID	名将名	敌方阵容	属性系数	胜奖铜钱	胜奖荣誉
+ar1	新锐名将·玄一	u004;u005;u006	1	800	40
+ar2	成名名将·青鸿	u004;u005;u006	1.2	1200	60
+ar3	传说名将·暮雪	u004;u005;u006	1.4	2000	100
