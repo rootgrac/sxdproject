@@ -1,0 +1,8 @@
+# 技能表（占位：效果器体系由 M1-6 扩展，ratio 为当前内核占位倍率）
+
+id	name	kind	ratio
+str	str	str	float
+技能ID	技能名	类型(normal/ultimate)	伤害倍率(占位)
+sk_basic	普攻	normal	1
+sk_qi	绝技·冲霄	ultimate	1.8
+sk_guard	绝技·磐石	ultimate	1.5

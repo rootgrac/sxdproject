@@ -1,0 +1,14 @@
+{
+  "name": "xiantu-excel2json",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "仙途 HD — 导表工具（§3.6：表头三行约定 + TSV/CSV 源 → JSON，含类型/主键/引用校验）",
+  "scripts": {
+    "test": "node --experimental-test-isolation=none --test \"test/*.test.ts\"",
+    "run": "node src/run.ts"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

@@ -1,0 +1,13 @@
+# 表头三行（字段名/类型/注释）｜ 首列 = 主键
+
+# 类型：str / int / float / bool / str[] / int[]（单元格内 `;` 分隔）
+#       跨表引用：ref:<表名>.<列名>（如 ref:skill.id），导出时自动校验引用存在
+# 空单元格取默认值（str="" / int=0 / float=0 / bool=false / 数组=[]）
+# 行首 # 为表级注释；空行忽略。导出命令见 tools/excel2json/README.md
+
+id	name	hp	atk	def	spd	acc	eva	crit	skills
+str	str	int	int	int	int	float	float	float	ref:skill.id
+角色ID	名字	生命	攻击	防御	速度	命中	闪避	暴击率	技能列表（引用 skill.id）
+u001	云骞	1000	120	60	110	1	0.05	0.15	sk_basic;sk_qi
+u002	洛璃	850	150	40	125	0.95	0.1	0.05	sk_basic;sk_qi
+u003	沈砚	1200	90	90	95	1	0.05	0.1	sk_basic;sk_guard

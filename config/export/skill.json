@@ -1,0 +1,20 @@
+[
+  {
+    "id": "sk_basic",
+    "name": "普攻",
+    "kind": "normal",
+    "ratio": 1
+  },
+  {
+    "id": "sk_qi",
+    "name": "绝技·冲霄",
+    "kind": "ultimate",
+    "ratio": 1.8
+  },
+  {
+    "id": "sk_guard",
+    "name": "绝技·磐石",
+    "kind": "ultimate",
+    "ratio": 1.5
+  }
+]

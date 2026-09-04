@@ -1,0 +1,47 @@
+[
+  {
+    "id": "u001",
+    "name": "云骞",
+    "hp": 1000,
+    "atk": 120,
+    "def": 60,
+    "spd": 110,
+    "acc": 1,
+    "eva": 0.05,
+    "crit": 0.15,
+    "skills": [
+      "sk_basic",
+      "sk_qi"
+    ]
+  },
+  {
+    "id": "u002",
+    "name": "洛璃",
+    "hp": 850,
+    "atk": 150,
+    "def": 40,
+    "spd": 125,
+    "acc": 0.95,
+    "eva": 0.1,
+    "crit": 0.05,
+    "skills": [
+      "sk_basic",
+      "sk_qi"
+    ]
+  },
+  {
+    "id": "u003",
+    "name": "沈砚",
+    "hp": 1200,
+    "atk": 90,
+    "def": 90,
+    "spd": 95,
+    "acc": 1,
+    "eva": 0.05,
+    "crit": 0.1,
+    "skills": [
+      "sk_basic",
+      "sk_guard"
+    ]
+  }
+]
