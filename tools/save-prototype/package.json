@@ -1,0 +1,13 @@
+{
+  "name": "xiantu-save-prototype",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "仙途 HD — 存档系统纯 TS 原型（M0；将来移植 client/assets/scripts/framework/save 并接入 Cocos 文件系统）",
+  "scripts": {
+    "test": "node --experimental-test-isolation=none --test \"test/*.test.ts\""
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

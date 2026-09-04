@@ -1,0 +1,10 @@
+{
+  "name": "xiantu-m0-demo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "仙途 HD — M0 核心链路 CLI 演示（确定性战斗回放 + 存档可靠性），无引擎依赖",
+  "engines": {
+    "node": ">=24"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "saveVersion": 1,
+  "meta": {
+    "createdAt": 1756944000000,
+    "playtimeSec": 3600,
+    "lastSavedAt": 1756947600000
+  },
+  "player": {
+    "name": "青玄",
+    "level": 12,
+    "exp": 3450,
+    "realm": 1,
+    "copper": 8888,
+    "gold": 66,
+    "stamina": 74,
+    "staminaTs": 1756944000000
+  },
+  "partners": [],
+  "equips": [],
+  "bag": [{ "id": "potion_s", "count": 5 }],
+  "progress": { "chapter": 2, "node": 5, "towerBest": 0 },
+  "achievements": { "unlocked": [], "claimed": [] }
+}

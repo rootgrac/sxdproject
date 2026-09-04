@@ -1,0 +1,13 @@
+{
+  "name": "@xiantu/battle-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "仙途 HD — 纯 TS 确定性战斗内核（M0 原型：零第三方依赖，Node 24 type-stripping 直接运行与测试）",
+  "scripts": {
+    "test": "node --experimental-test-isolation=none --test \"test/*.test.ts\""
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

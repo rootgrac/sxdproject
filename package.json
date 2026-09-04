@@ -1,0 +1,17 @@
+{
+  "name": "xiantu-hd",
+  "version": "0.2.0",
+  "private": true,
+  "description": "仙途 HD（暂定名）单机仙侠 RPG — monorepo 工具链根（commitlint / husky / CI 脚本）",
+  "scripts": {
+    "check": "node -e \"console.log('[placeholder] lint/单测门禁将在 M0 代码落地后启用（见 .github/workflows/ci.yml）')\"",
+    "test": "node --import ./tools/client-core-test/loader-entry.mjs --experimental-test-isolation=none --test \"battle-core/test/*.test.ts\" \"tools/save-prototype/test/*.test.ts\" \"tools/client-core-test/test/*.test.ts\"",
+    "demo": "node tools/m0-demo/run.ts",
+    "sim": "node tools/sim/run.ts"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19",
+    "@commitlint/config-conventional": "^19",
+    "husky": "^9"
+  }
+}

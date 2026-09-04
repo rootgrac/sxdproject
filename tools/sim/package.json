@@ -1,0 +1,10 @@
+{
+  "name": "xiantu-sim",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "仙途 HD — 批量战斗模拟器雏形（平衡回归：胜率/回合统计与对照场景，开发文档 §3.6/§4.3）",
+  "engines": {
+    "node": ">=24"
+  }
+}

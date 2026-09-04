@@ -1,0 +1,18 @@
+# 本地工作区数据（不属于项目仓库）
+.workbuddy/
+
+# 依赖与构建产物
+node_modules/
+build/
+dist/
+
+# Cocos Creator 生成目录
+library/
+local/
+temp/
+profiles/
+native/engine/
+
+# 系统与编辑器杂项
+.DS_Store
+*.log

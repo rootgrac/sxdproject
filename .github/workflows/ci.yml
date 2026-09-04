@@ -1,0 +1,39 @@
+# 质量门禁 CI（开发文档 §5.6）
+#
+# 当前已启用：全仓库单测（零第三方依赖：Node ≥24 原生 type-stripping，root `npm test` 聚合 31 项）
+# 待启用（npm 依赖联网安装一次并提交 package-lock.json 后按注释恢复）：
+#   - commitlint 提交信息校验（§5.3）
+#   - lint / 类型检查（typescript 等 devDependencies 落地后）
+#   - 存档迁移 fixtures 回归（tools/save-migration-test 固化后，当前由各包 npm test 覆盖）
+name: CI
+
+on:
+  push:
+    branches: [develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  unit:
+    name: 单测（battle-core + save-prototype + client-core）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24 # 需要 ≥23.6 的原生 TS type-stripping；零依赖，无需 npm ci
+      - name: 全仓库单测
+        run: npm test
+
+  # commitlint: 提交信息规范校验（§5.3）。依赖 @commitlint/*（根 package.json 已声明），
+  # 待本仓库生成 package-lock.json 后恢复为真实步骤：
+  #   - uses: actions/setup-node@v4 / with node-version 20
+  #   - run: npm ci
+  #   - PR 事件: npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
+  #   - push 事件: npx commitlint --from HEAD~1 --to HEAD --verbose
+  gate-placeholder:
+    name: 提交规范校验（占位：待 lockfile 落地后启用 commitlint）
+    runs-on: ubuntu-latest
+    steps:
+      - name: 占位
+        run: echo "commitlint 待 npm install 生成 package-lock.json 后启用（开发文档 §5.3/§5.6）"

@@ -1,0 +1,13 @@
+{
+  "name": "xiantu-client-core-test",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "client 纯逻辑层单测（在 Cocos 外跑：存档内核 KvSaveStore / 自研 SHA-256），import client/assets/scripts 下无 cc 依赖的文件",
+  "scripts": {
+    "test": "node --import ./loader-entry.mjs --experimental-test-isolation=none --test \"test/*.test.ts\""
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}
