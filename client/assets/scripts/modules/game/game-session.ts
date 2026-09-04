@@ -35,6 +35,12 @@ import { buy } from '../shop/shop-core';
 import type { ShopRow } from '../shop/shop-core';
 import { grantRewards, recordChallenge, remainingToday, rollDay } from '../stage/elite-core';
 import type { DailyState, EliteRewardRow, EliteRow } from '../stage/elite-core';
+import { claimAllMail, claimMail, listMail, sendMail } from '../mail/mail-core';
+import type { MailboxState, MailEntry } from '../mail/mail-core';
+import { claimBox, notifyTask, progressView } from '../task/task-core';
+import type { DailyTasks, TaskBoxRow, TaskRow, TaskType } from '../task/task-core';
+import { rewardOf, signIn, signInStatusOf } from '../task/signin-core';
+import type { SignInRow } from '../task/signin-core';
 
 /** 游戏所需全部配置行（Cocos resources / 测试注入） */
 export interface GameConfigs {
@@ -50,6 +56,9 @@ export interface GameConfigs {
   shop: ShopRow[];
   elite: EliteRow[];
   eliteReward: EliteRewardRow[];
+  tasks: TaskRow[];
+  taskBox: TaskBoxRow[];
+  signIn: SignInRow[];
 }
 
 /** 主角固定 unit */
@@ -173,6 +182,16 @@ export class GameSession {
     return `${d.getFullYear()}-${mm}-${dd}`;
   }
 
+  /** daily 视图（v5 全字段） */
+  private dailyOf(): DailyTasks {
+    return this.guardData().daily as unknown as DailyTasks;
+  }
+
+  /** 每日任务事件通知（跨日惰性重置由 task-core 处理） */
+  private notifyToday(type: TaskType): void {
+    notifyTask(this.dailyOf(), this.dateKeyOf(), this.configs.tasks, type);
+  }
+
   // ── 主线（M1）──────────────────────────────────────────────
 
   currentStage(): StageRow | null {
@@ -233,6 +252,7 @@ export class GameSession {
     if (!stage) throw new Error('无可结算关卡（章节已完成或目标缺失）');
     const player = data.player as RoleState & { copper: number };
     clearStage({ player, progress: data.progress }, this.configs.stages, stage);
+    this.notifyToday('stage_win');
     this.manager?.markDirty();
     this.flushNow();
   }
@@ -286,6 +306,7 @@ export class GameSession {
         }
       }
     }
+    this.notifyToday('recruit');
     this.manager?.markDirty();
     this.flushNow();
     return { results: outcome.results, joined };
@@ -296,6 +317,7 @@ export class GameSession {
   shopBuy(itemId: string, count = 1): { cost: number } {
     const data = this.guardData();
     const r = buy(this.configs.shop, data.bag as BagItem[], data.player, itemId, count);
+    this.notifyToday('shop');
     this.manager?.markDirty();
     this.flushNow();
     return { cost: r.cost };
@@ -312,6 +334,7 @@ export class GameSession {
     const equips = data.equips as EquipState[];
     equips.push(inst);
     equipTo(equips, inst, this.configs.equip, 'hero');
+    this.notifyToday('craft');
     this.manager?.markDirty();
     this.flushNow();
     return inst;
@@ -331,6 +354,7 @@ export class GameSession {
     if (data.player.copper < cost) throw new Error(`铜钱不足（强化需 ${cost}）`);
     enhanceItem(item, data.player.realm); // 上限校验
     data.player.copper -= cost;
+    this.notifyToday('enhance');
     this.manager?.markDirty();
     this.flushNow();
     return { uid: item.uid, enhance: item.enhance, cost };
@@ -397,6 +421,7 @@ export class GameSession {
     rollDay(data.daily as DailyState, this.dateKeyOf());
     recordChallenge(data.daily as DailyState, this.dateKeyOf(), elite);
     grantRewards(data.bag as BagItem[], this.configs.eliteReward, eliteId);
+    this.notifyToday('elite_win');
     this.manager?.markDirty();
     this.flushNow();
   }
@@ -404,5 +429,68 @@ export class GameSession {
   /** 精英战败：不扣次数不发掉落 */
   onEliteLose(): void {
     // 无状态变化
+  }
+
+  // ── 任务 / 签到 / 信箱（M3）──────────────────────────────
+
+  taskView(): { id: string; name: string; current: number; target: number; done: boolean; active: number }[] {
+    return progressView(this.dailyOf(), this.dateKeyOf(), this.configs.tasks);
+  }
+
+  activeToday(): number {
+    return this.taskView().reduce((s, v) => s + (v.done ? v.active : 0), 0);
+  }
+
+  /** 领取活跃宝箱档位（copper 入账） */
+  claimActiveBox(threshold: number): boolean {
+    const data = this.guardData();
+    const r = claimBox(this.dailyOf(), this.dateKeyOf(), this.configs.tasks, this.configs.taskBox, data.player, threshold);
+    this.manager?.markDirty();
+    this.flushNow();
+    return r;
+  }
+
+  signInStatus(): { signedToday: boolean; streak: number; nextDay: number } {
+    return signInStatusOf(this.dailyOf(), this.dateKeyOf());
+  }
+
+  /** 签到：按表发放当日奖励（连续天数 1..7 循环，断签重置） */
+  signInNow(): { day: number; streak: number; copper: number; item: string } {
+    const data = this.guardData();
+    const today = this.dateKeyOf();
+    const r = signIn(this.dailyOf(), today);
+    const reward = rewardOf(this.configs.signIn, r.day);
+    data.player.copper += reward.copper;
+    if (reward.item) addItem(data.bag as BagItem[], reward.item, 1);
+    this.manager?.markDirty();
+    this.flushNow();
+    return { day: r.day, streak: r.streak, copper: reward.copper, item: reward.item };
+  }
+
+  /** 信箱摘要（未读标记） */
+  mailView(): { id: string; title: string; unclaimed: boolean }[] {
+    const mb = this.guardData().mailbox as MailEntry[];
+    const now = this.now();
+    return listMail({ mailbox: mb }, now).map((m) => ({ id: m.id, title: m.title, unclaimed: m.claimedAt === null }));
+  }
+
+  /** 系统发放一封奖励邮件（任务/活动/补偿入口） */
+  sendRewardMail(id: string, title: string, attachments: { kind: 'item' | 'copper'; itemId?: string; count: number }[]): void {
+    const mb = this.guardData().mailbox as MailEntry[];
+    const now = this.now();
+    sendMail({ mailbox: mb }, { id, title, body: '', attachments, claimedAt: null, expiresAt: null, createdAt: now });
+    this.manager?.markDirty();
+    this.flushNow();
+  }
+
+  /** 批量领取全部附件（返回领取封数） */
+  claimMailsAll(): number {
+    const data = this.guardData();
+    const n = claimAllMail({ mailbox: data.mailbox as MailEntry[] }, data.bag as BagItem[], data.player, this.now());
+    if (n > 0) {
+      this.manager?.markDirty();
+      this.flushNow();
+    }
+    return n;
   }
 }

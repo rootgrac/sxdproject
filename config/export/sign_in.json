@@ -1,0 +1,37 @@
+[
+  {
+    "day": 1,
+    "copper": 500,
+    "item": "it_iron"
+  },
+  {
+    "day": 2,
+    "copper": 800,
+    "item": ""
+  },
+  {
+    "day": 3,
+    "copper": 1200,
+    "item": "it_spirit"
+  },
+  {
+    "day": 4,
+    "copper": 1500,
+    "item": ""
+  },
+  {
+    "day": 5,
+    "copper": 2000,
+    "item": "it_scroll"
+  },
+  {
+    "day": 6,
+    "copper": 2500,
+    "item": ""
+  },
+  {
+    "day": 7,
+    "copper": 5000,
+    "item": "it_blueprint_o1"
+  }
+]

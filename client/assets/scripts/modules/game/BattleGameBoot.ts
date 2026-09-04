@@ -104,8 +104,11 @@ export class BattleGameBoot extends Component {
       load('config/shop'),
       load('config/elite'),
       load('config/elite_reward'),
+      load('config/task'),
+      load('config/task_box'),
+      load('config/sign_in'),
     ]).then(
-      ([units, skills, effectRows, stages, recruit, recruitCfg, equip, item, craft, shop, elite, eliteReward]) => ({
+      ([units, skills, effectRows, stages, recruit, recruitCfg, equip, item, craft, shop, elite, eliteReward, tasks, taskBox, signIn]) => ({
         units: units as GameConfigs['units'],
         skills: skills as GameConfigs['skills'],
         effectRows: effectRows as GameConfigs['effectRows'],
@@ -118,6 +121,9 @@ export class BattleGameBoot extends Component {
         shop: shop as GameConfigs['shop'],
         elite: elite as GameConfigs['elite'],
         eliteReward: eliteReward as GameConfigs['eliteReward'],
+        tasks: tasks as GameConfigs['tasks'],
+        taskBox: taskBox as GameConfigs['taskBox'],
+        signIn: signIn as GameConfigs['signIn'],
       }),
     );
   }

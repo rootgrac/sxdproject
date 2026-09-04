@@ -51,6 +51,9 @@ const CFG: GameConfigs = {
   shop: [],
   elite: [],
   eliteReward: [],
+  tasks: [],
+  taskBox: [],
+  signIn: [],
   stages: [
     { id: '1_1', chapter: 1, node: 1, name: '山道初行', enemies: ['e001'], exp_reward: 50, copper_reward: 100 },
     { id: '1_2', chapter: 1, node: 2, name: '雾林小径', enemies: ['e002'], exp_reward: 60, copper_reward: 120 },

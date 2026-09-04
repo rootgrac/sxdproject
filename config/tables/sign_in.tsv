@@ -1,0 +1,12 @@
+# 七日签到奖励（M3-3：连续签到按 1..7 循环，第 7 天大奖；断签重置为第 1 天）
+
+day	copper	item
+int	int	ref:item.id
+第N天	铜钱	道具(可空)
+1	500	it_iron
+2	800	
+3	1200	it_spirit
+4	1500	
+5	2000	it_scroll
+6	2500	
+7	5000	it_blueprint_o1

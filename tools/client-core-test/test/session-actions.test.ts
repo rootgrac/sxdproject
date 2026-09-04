@@ -65,6 +65,9 @@ const CFG: GameConfigs = {
     { id: 'er1', elite: 'e_e1', item: 'it_iron', count: 2 },
     { id: 'er2', elite: 'e_e1', item: 'it_spirit', count: 1 },
   ],
+  tasks: [],
+  taskBox: [],
+  signIn: [],
 };
 
 function mk(randValue = 0.001): { kv: MemoryKV; session: GameSession } {

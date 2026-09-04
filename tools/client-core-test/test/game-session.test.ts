@@ -64,6 +64,9 @@ const CFG: GameConfigs = {
   shop: [],
   elite: [],
   eliteReward: [],
+  tasks: [],
+  taskBox: [],
+  signIn: [],
 };
 
 function mk(): { kv: MemoryKV; session: GameSession } {
