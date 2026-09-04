@@ -9,7 +9,7 @@
 - 功能分 5 批次（核心闭环 → 养成深度 → 系统完善 → 商业化 → 远期扩展），周期约 20 周。
 - Git：单仓 monorepo（client / battle-core / config / tools / docs），main 受保护 + Conventional Commits + SemVer annotated tag；回滚重点：iOS 已发布版本无法回退（分阶段发布兜底）、存档迁移事故读 backup_v{n} 回退。
 - 硬性合规红线：美术 / 文案全原创；不得复制原版受版权内容；上线名称不得含「神仙道」商标，发布前需商标检索 + 版号流程（需公司主体，国内含单机也要版号）。
-- 当前仓库状态：⚠️ 本机 `D:\sxdproject` 目录内**没有 `.git`**（文档记载的 v0.2.0 提交 9b63f16 未落盘到本目录）；本机未安装 git（用户 2026-09-04 选择手动安装，尚未就绪）。待 git 就绪后在本目录重新 init：main 首提交（文档快照 v0.2.0）+ annotated tag `v0.2.0` → 建 `develop` → 再配置 remote 推送。
+- 当前仓库状态：✅ **已推送远程**（2026-09-04）：main + develop（`b168cdc`，83 文件）+ tag `v0.2.1` 已在 https://github.com/rootgrac/sxdproject.git（origin/main、origin/develop remote-tracking refs 已确认）。CI 首跑结果需在 GitHub Actions 页面确认（本终端无外网）。**M0 收官**：骨架/文档 v0.2.1/CI 配置/战斗 demo 引擎内预览成功/36 项单测全绿。
 - 远程仓库地址（2026-09-04 产品负责人提供）：`https://github.com/rootgrac/sxdproject.git`。
 - Cocos：**Creator 3.8.8 已下载**于 `C:\ProgramData\cocos\editors\Creator\3.8.8\CocosCreator.exe`；`client/` 已用官方 empty-2d 模板初始化并由 Dashboard **首次导入完成**（library/temp/settings/meta 齐备；package.json 已补 uuid+creator.version，另加 `"type":"module"` 供 node 直测 client 纯逻辑——若编辑器出现异常报错需考虑移除）。`client/assets/scripts/`：`battle-core/`（由根包经 `tools/sync-battle-core.mjs` 同步，去 .ts 扩展名，禁止手改）、`framework/save/`（KV 版存档内核：自研同步 SHA-256 + KvSaveStore，9 测全绿）、`modules/battle/BattleDemoBoot.ts`（3v3 自动战斗演出，纯代码建 UI，待用户挂到场景 Canvas 下预览）。git 仍未安装。
 - **全仓库回归入口**：根 `npm test` = **36 测**（battle-core 9 + save-prototype 13 + client-core-test 14，含 loader hook 解析 Cocos 风格无扩展 import）。client 存档层三件套：sha256.ts（自研同步 SHA-256）+ save-core.ts（KvSaveStore）+ save-manager.ts（§3.5-1 运行时调度：脏标记合并/30s 批量节拍 tick(now)/flushNow 立即写/lastSavedAt 维护，时钟注入可测）。

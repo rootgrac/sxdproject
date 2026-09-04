@@ -6,9 +6,9 @@
 
 | # | 验收项（开发文档 M0 DoD / §0 首周清单） | 状态 | 证据 / 阻塞 |
 | --- | --- | --- | --- |
-| 1 | 仓库初始化 + 开发分支 | ⏳ | 目录结构齐备；**本机无 git**（用户安装中）→ 装好即 init + develop + 首提交 |
-| 2 | 推送到远程（develop） | ⏳ | 地址已获取 https://github.com/rootgrac/sxdproject.git；同上 |
-| 3 | CI 跑通 | ⏳ | `.github/workflows/ci.yml` 草案登记；推送后启用（npm 依赖需联网安装一次生成 lockfile） |
+| 1 | 仓库初始化 + 开发分支 | ✅ | main + develop 均指向 b168cdc，tag v0.2.1（2026-09-04） |
+| 2 | 推送到远程（develop） | ✅ | origin/main + origin/develop + tag 已推送（rootgrac/sxdproject.git） |
+| 3 | CI 跑通 | ⏳ | `.github/workflows/ci.yml`（单测门禁）已随推送触发；**首跑结果待 GitHub Actions 页面确认** |
 | 4 | 导表工具（Excel→JSON） | ⬜ | 未开始（M0 后半段，依赖无；可离线进行） |
 | 5 | 存档系统最小闭环（创建/写入/读取/校验/备份轮换） | ✅ | `tools/save-prototype` 13 测 + `client framework/save` 9 测（对拍一致），根 `npm test` 31 测全绿 |
 | 6 | 存档损坏自动回退 / 版本迁移 | ✅ | 同上（截断/篡改回退、v1→v2 迁移 + backup_v{n} 快照均有测试） |
