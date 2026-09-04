@@ -18,8 +18,8 @@ jobs:
     name: 单测（battle-core + save-prototype + client-core）
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5 # v5：原生 Node 24 运行时（v4 内部 Node 20 已弃用）
+      - uses: actions/setup-node@v5 # v5：同上
         with:
           node-version: 24 # 需要 ≥23.6 的原生 TS type-stripping；零依赖，无需 npm ci
       - name: 全仓库单测
