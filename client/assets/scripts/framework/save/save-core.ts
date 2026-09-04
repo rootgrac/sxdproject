@@ -44,6 +44,10 @@ export interface SaveData {
   bag: unknown[];
   /** M2 上阵配置：伙伴位（主角常驻不占位）；值为伙伴实例 uid（v3 起） */
   party: { partnerSlots: (string | null)[] };
+  /** 命格（观星所得；v6 起） */
+  fates: { uid: string; fateId: string; level: number }[];
+  /** 命格装配 8 槽（v6 起） */
+  fateParty: { slots: (string | null)[] };
   /** 每日状态（v4 elites；v5 起扩展 tasks/claimedBoxes/signIn；按 dateKey 惰性重置） */
   daily: {
     dateKey: string;
@@ -117,13 +121,13 @@ type Migration = (raw: Record<string, unknown>) => Record<string, unknown>;
 const migrations: Record<number, Migration> = {
   // v1 → v2：新增 mailbox（本地系统信箱，§2.1 S10）
   1: (raw) => {
-    const next = { ...raw, saveVersion: 2 };
+    const next: Record<string, unknown> = { ...raw, saveVersion: 2 };
     if (!Array.isArray(next.mailbox)) next.mailbox = [];
     return next;
   },
   // v2 → v3：新增 party 上阵配置（M2 伙伴系统）
   2: (raw) => {
-    const next = { ...raw, saveVersion: 3 };
+    const next: Record<string, unknown> = { ...raw, saveVersion: 3 };
     const party = raw.party as { partnerSlots?: unknown } | undefined;
     const slots = party && Array.isArray(party.partnerSlots) ? party.partnerSlots : [null, null];
     while (slots.length < PARTNER_SLOT_COUNT) slots.push(null);
@@ -132,7 +136,7 @@ const migrations: Record<number, Migration> = {
   },
   // v3 → v4：新增 daily 每日状态（精英次数等；dateKey 为本地日期串）
   3: (raw) => {
-    const next = { ...raw, saveVersion: 4 };
+    const next: Record<string, unknown> = { ...raw, saveVersion: 4 };
     const daily = raw.daily as { dateKey?: unknown; elites?: unknown } | undefined;
     const elites = daily && typeof daily.elites === 'object' && daily.elites !== null ? { ...(daily.elites as Record<string, number>) } : {};
     next.daily = { dateKey: (daily && typeof daily.dateKey === 'string' ? daily.dateKey : ''), elites };
@@ -140,7 +144,7 @@ const migrations: Record<number, Migration> = {
   },
   // v4 → v5：daily 扩展 tasks/claimedBoxes/signIn（M3 每日任务与签到）
   4: (raw) => {
-    const next = { ...raw, saveVersion: 5 };
+    const next: Record<string, unknown> = { ...raw, saveVersion: 5 };
     const daily = raw.daily as { dateKey?: unknown; elites?: unknown; tasks?: unknown; claimedBoxes?: unknown; signIn?: unknown } | undefined;
     const elites = daily && typeof daily.elites === 'object' && daily.elites !== null ? { ...(daily.elites as Record<string, number>) } : {};
     const tasks = daily && typeof daily.tasks === 'object' && daily.tasks !== null ? { ...(daily.tasks as Record<string, number>) } : {};
@@ -156,7 +160,7 @@ const migrations: Record<number, Migration> = {
     return next;
   },  // v5 → v6：新增 fates/fateParty（M3 命格观星）
   5: (raw) => {
-    const next = { ...raw, saveVersion: 6 };
+    const next: Record<string, unknown> = { ...raw, saveVersion: 6 };
     const fates = Array.isArray(raw.fates) ? (raw.fates as { uid: string; fateId: string; level?: number }[]).map((x) => ({ uid: x.uid, fateId: x.fateId, level: typeof x.level === 'number' && x.level >= 1 ? x.level : 1 })) : [];
     const fp = raw.fateParty as { slots?: unknown } | undefined;
     let slots = fp && Array.isArray(fp.slots) ? (fp.slots as (string | null)[]) : [];
@@ -168,7 +172,7 @@ const migrations: Record<number, Migration> = {
   },
   // v6 → v7：player 新增 honor（竞技场荣誉）
   6: (raw) => {
-    const next = { ...raw, saveVersion: 7 };
+    const next: Record<string, unknown> = { ...raw, saveVersion: 7 };
     const player = raw.player as { honor?: unknown } | undefined;
     const p = { ...(raw.player as Record<string, unknown>) };
     if (!p.honor) p.honor = typeof player?.honor === 'number' ? player.honor : 0;

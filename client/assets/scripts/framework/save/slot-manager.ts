@@ -30,7 +30,8 @@ export class SlotManager {
 
   /** 槽位总览（3 手动 + 1 自动，只读） */
   list(): SlotInfo[] {
-    return [...MANUAL_SLOTS, AUTO_SLOT].map((slot) => {
+    const ids: SlotId[] = [...MANUAL_SLOTS, AUTO_SLOT];
+    return ids.map((slot) => {
       const sm = this.storeOf(slot).summary();
       return { slot, state: sm.state, name: sm.name, level: sm.level, lastSavedAt: sm.lastSavedAt };
     });

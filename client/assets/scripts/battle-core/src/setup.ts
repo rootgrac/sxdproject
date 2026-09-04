@@ -19,6 +19,8 @@ export interface UnitRow {
   eva: number;
   crit: number;
   skills: string[] | string;
+  /** 招募解锁等级（0/缺省 = 不可招募；M2 招贤阁） */
+  recruit_level?: number;
 }
 
 /** config/export/skill.json 行结构（ratio 仅作无效果器时的回退倍率） */

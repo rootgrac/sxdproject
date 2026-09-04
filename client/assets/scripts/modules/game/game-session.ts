@@ -43,13 +43,11 @@ import { rewardOf, signIn, signInStatusOf } from '../task/signin-core';
 import type { SignInRow } from '../task/signin-core';
 import { addFateOrEvolve, autoEquip, equippedFates, sumFateBonus } from '../fate/fate-core';
 import { sumBonus } from '../equip/equip-core';
-import type { EquipDefRow } from '../equip/equip-core';
 import { arenaRemaining, arenaWinsToday, recordArenaWin, scaleUnitRows } from '../arena/arena-core';
 import type { ArenaRow } from '../arena/arena-core';
 import { scanAchievements } from '../achievement/achievement-core';
 import type { AchievementRow, AchievementStats } from '../achievement/achievement-core';
 import type { FateCfgRow, FateDefRow, FateSetRow, FateState } from '../fate/fate-core';
-import type { EquipState } from '../equip/equip-core';
 
 /** 游戏所需全部配置行（Cocos resources / 测试注入） */
 export interface GameConfigs {
