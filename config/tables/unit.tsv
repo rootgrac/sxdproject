@@ -11,3 +11,6 @@ str	str	int	int	int	int	float	float	float	ref:skill.id
 u001	云骞	1000	120	60	110	1	0.05	0.15	sk_basic;sk_qi
 u002	洛璃	850	150	40	125	0.95	0.1	0.05	sk_basic;sk_qi
 u003	沈砚	1200	90	90	95	1	0.05	0.1	sk_basic;sk_guard
+u004	枯木妖	900	110	50	100	0.9	0.15	0.05	sk_basic;sk_qi
+u005	赤目妖	800	130	35	130	0.95	0.05	0.2	sk_basic;sk_qi
+u006	黑风妖	1000	100	70	90	0.95	0.1	0.05	sk_basic;sk_guard

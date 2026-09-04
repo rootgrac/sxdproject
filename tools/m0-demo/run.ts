@@ -8,35 +8,42 @@
  * 运行：node tools/m0-demo/run.ts
  */
 import { runBattle } from '../../battle-core/src/engine.ts';
-import { makeUnit } from '../../battle-core/src/model.ts';
+import { buildUnits } from '../../battle-core/src/setup.ts';
+import type { SkillRow, UnitRow } from '../../battle-core/src/setup.ts';
 import type { BattleEvent } from '../../battle-core/src/model.ts';
 import { AUTO_SLOT, SlotManager } from '../save-prototype/src/slots.ts';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-// ── 1. 战斗回放演示 ─────────────────────────────────────────
+// ── 1. 战斗回放演示（阵容由导出的配置表驱动，M1-3：改表 → 重导 → 本 demo 随之变化）──
 
 const SEED = 20260904;
+const HERE = dirname(fileURLToPath(import.meta.url));
+
+function loadConfig(): { unitRows: unknown[]; skillRows: unknown[] } {
+  const unitJson = JSON.parse(readFileSync(join(HERE, '..', '..', 'config', 'export', 'unit.json'), 'utf8')) as unknown[];
+  const skillJson = JSON.parse(readFileSync(join(HERE, '..', '..', 'config', 'export', 'skill.json'), 'utf8')) as unknown[];
+  return { unitRows: unitJson, skillRows: skillJson };
+}
 
 function demoBattle(): void {
-  const allies = [
-    makeUnit({ id: '云骞', side: 'ally', hp: 1000, stats: { atk: 120, def: 60, spd: 110, acc: 1, eva: 0.05, crit: 0.15 } }),
-    makeUnit({ id: '洛璃', side: 'ally', hp: 850, stats: { atk: 150, def: 40, spd: 125, acc: 0.95, eva: 0.1, crit: 0.05 } }),
-    makeUnit({ id: '沈砚', side: 'ally', hp: 1200, stats: { atk: 90, def: 90, spd: 95, acc: 1, eva: 0.05, crit: 0.1 } }),
-  ];
-  const enemies = [
-    makeUnit({ id: '枯木妖', side: 'enemy', hp: 900, stats: { atk: 110, def: 50, spd: 100, acc: 0.9, eva: 0.15, crit: 0.05 } }),
-    makeUnit({ id: '赤目妖', side: 'enemy', hp: 800, stats: { atk: 130, def: 35, spd: 130, acc: 0.95, eva: 0.05, crit: 0.2 } }),
-    makeUnit({ id: '黑风妖', side: 'enemy', hp: 1000, stats: { atk: 100, def: 70, spd: 90, acc: 0.95, eva: 0.1, crit: 0.05 } }),
-  ];
+  const { unitRows, skillRows } = loadConfig();
+  const units = buildUnits(unitRows as UnitRow[], skillRows as SkillRow[], 'ally'); // 先以 ally 侧构建全部，随后按序分队
+  const allies = units.slice(0, 3).map((u) => ({ ...u, side: 'ally' as const }));
+  const enemies = buildUnits(unitRows.slice(3) as UnitRow[], skillRows as SkillRow[], 'enemy');
+  const names = (us: { name: string }[]) => us.map((u) => u.name).join('/');
 
-  console.log('[1] 战斗回放（3v3 · seed = ' + SEED + ' · 数值为占位）');
+  console.log(`[1] 战斗回放（3v3 · seed = ${SEED} · 配置源 config/export/unit.json + skill.json）`);
+  console.log(`    我方 ${names(allies)} vs 敌方 ${names(enemies)}`);
   const result = runBattle({ seed: SEED, allies, enemies });
   let qiNote: Record<string, number> = {};
+  const nameOf: Record<string, string> = {};
+  for (const u of [...allies, ...enemies]) nameOf[u.id] = u.name;
 
   for (const ev of result.events) {
-    const line = describeEvent(ev, qiNote);
+    const line = describeEvent(ev, qiNote, nameOf);
     if (line) console.log(line);
   }
   const verdict =
@@ -49,21 +56,22 @@ function demoBattle(): void {
   console.log(`  同种子复跑结果一致性：${same ? '✅ 完全一致（可回放）' : '❌ 不一致！'}`);
 }
 
-function describeEvent(ev: BattleEvent, qiNote: Record<string, number>): string | null {
+function describeEvent(ev: BattleEvent, qiNote: Record<string, number>, nameOf: Record<string, string>): string | null {
+  const nm = (id: string): string => nameOf[id] ?? id;
   switch (ev.type) {
     case 'round':
       return `\n── 第 ${ev.round} 回合 ──`;
     case 'attack':
-      if (!ev.hit) return `  ${ev.actor} 出手，被 ${ev.target} 闪避！`;
+      if (!ev.hit) return `  ${nm(ev.actor)} 出手，被 ${nm(ev.target)} 闪避！`;
       qiNote[ev.actor] = ev.actorQi;
       qiNote[ev.target] = ev.targetQi;
-      return `  ${ev.actor} 普攻 ${ev.target}，造成 ${ev.damage} 伤害${ev.crit ? '【暴击】' : ''}（气 ${ev.actorQi}）`;
+      return `  ${nm(ev.actor)} 普攻 ${nm(ev.target)}，造成 ${ev.damage} 伤害${ev.crit ? '【暴击】' : ''}（气 ${ev.actorQi}）`;
     case 'skill':
       qiNote[ev.actor] = ev.actorQi;
       qiNote[ev.target] = ev.targetQi;
-      return `  ⚡ ${ev.actor} 绝技迸发！命中 ${ev.target}，造成 ${ev.damage} 伤害${ev.crit ? '【暴击】' : ''}`;
+      return `  ⚡ ${nm(ev.actor)} 绝技迸发！命中 ${nm(ev.target)}，造成 ${ev.damage} 伤害${ev.crit ? '【暴击】' : ''}`;
     case 'death':
-      return `  ☠ ${ev.unit} 倒下了`;
+      return `  ☠ ${nm(ev.unit)} 倒下了`;
     case 'end':
       return null;
   }

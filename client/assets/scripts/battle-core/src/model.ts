@@ -25,8 +25,10 @@ export interface Unit {
   hp: number;
   /** 气势 [0, qiMax]，≥ qiMax 时行动改为释放绝技 */
   qi: number;
-  /** 绝技（气势技）id——M0 原型仅记录用途，效果由 BattleConfig.skillRatio 统一占位 */
+  /** 绝技（气势技）id——表现层用于显示技能名；效果倍率见 skillRatio */
   skillId: string;
+  /** 绝技伤害倍率（由技能配置注入，M1-3）；缺省回退 BattleConfig.skillRatio */
+  skillRatio?: number;
   stats: UnitStats;
 }
 
@@ -69,6 +71,7 @@ export interface MakeUnitOptions {
   name?: string;
   hp?: number;
   skillId?: string;
+  skillRatio?: number;
   stats?: Partial<UnitStats>;
 }
 
@@ -83,6 +86,7 @@ export function makeUnit(o: MakeUnitOptions): Unit {
     hp: maxHp,
     qi: 0,
     skillId: o.skillId ?? 'ultimate',
+    skillRatio: o.skillRatio,
     stats: { ...DEFAULT_STATS, ...o.stats },
   };
 }

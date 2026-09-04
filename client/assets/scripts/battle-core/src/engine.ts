@@ -67,9 +67,9 @@ export function runBattle(input: BattleInput): BattleResult {
     if (!t) return;
 
     if (u.qi >= cfg.qiMax) {
-      // 绝技：必中，气势清零
+      // 绝技：必中，气势清零；倍率 = 单位技能配置注入，缺省回退全局 skillRatio
       u.qi = 0;
-      const { crit, damage } = rollDamage(u, t, cfg.skillRatio);
+      const { crit, damage } = rollDamage(u, t, u.skillRatio ?? cfg.skillRatio);
       t.hp -= damage;
       gainHurtQi(t);
       events.push({
