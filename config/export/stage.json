@@ -6,7 +6,7 @@
     "name": "山道初行",
     "enemies": "u004",
     "exp_reward": 50,
-    "copper_reward": 100
+    "copper_reward": 1000
   },
   {
     "id": "1_2",
@@ -18,7 +18,7 @@
       "u005"
     ],
     "exp_reward": 60,
-    "copper_reward": 120
+    "copper_reward": 1200
   },
   {
     "id": "1_3",
@@ -30,7 +30,7 @@
       "u005"
     ],
     "exp_reward": 75,
-    "copper_reward": 150
+    "copper_reward": 1500
   },
   {
     "id": "1_4",
@@ -42,7 +42,7 @@
       "u006"
     ],
     "exp_reward": 90,
-    "copper_reward": 180
+    "copper_reward": 1800
   },
   {
     "id": "1_5",
@@ -55,7 +55,7 @@
       "u006"
     ],
     "exp_reward": 110,
-    "copper_reward": 220
+    "copper_reward": 2200
   },
   {
     "id": "1_6",
@@ -68,7 +68,7 @@
       "u006"
     ],
     "exp_reward": 130,
-    "copper_reward": 260
+    "copper_reward": 2600
   },
   {
     "id": "1_7",
@@ -81,7 +81,7 @@
       "u006"
     ],
     "exp_reward": 150,
-    "copper_reward": 300
+    "copper_reward": 3000
   },
   {
     "id": "1_8",
@@ -94,7 +94,7 @@
       "u006"
     ],
     "exp_reward": 180,
-    "copper_reward": 360
+    "copper_reward": 3600
   },
   {
     "id": "1_9",
@@ -107,7 +107,7 @@
       "u006"
     ],
     "exp_reward": 210,
-    "copper_reward": 420
+    "copper_reward": 4200
   },
   {
     "id": "1_10",
@@ -120,6 +120,6 @@
       "u006"
     ],
     "exp_reward": 300,
-    "copper_reward": 600
+    "copper_reward": 6000
   }
 ]

@@ -22,6 +22,12 @@ import { LocalStorageKV } from '../../framework/save/drivers';
 import { runBattle } from '../../battle-core/src/engine';
 import type { BattleEvent } from '../../battle-core/src/model';
 import { REALM_NAMES } from '../role/role-core';
+import { needsOf } from '../equip/craft-core';
+import type { ItemDefRow } from '../item/item-core';
+
+function itemNameOf(items: ItemDefRow[], itemId: string): string {
+  return items.find((i) => i.id === itemId)?.name ?? itemId;
+}
 
 const { ccclass } = _decorator;
 
@@ -245,14 +251,236 @@ export class BattleGameBoot extends Component {
       return;
     }
     this.makeLabel(0, 40, `当前关卡：${stage.id}「${stage.name}」`, 20);
-    this.makeButton(-200, -80, 190, 56, '⚔ 挑战', () => this.startBattle());
-    this.makeButton(200, -80, 190, 56, '回到主菜单', () => {
+    this.makeButton(-230, -80, 180, 56, '⚔ 挑战', () => this.startBattle());
+    this.makeButton(-20, -80, 160, 56, '🧘 修行', () => this.openHub('recruit'));
+    this.makeButton(210, -80, 180, 56, '回主菜单', () => {
       this.flush();
       this.renderMenu();
     });
   }
 
+  // ── 修行 Hub（M2：招贤/装备/精英/商店）───────────────────
+
+  private hubErr: Label | null = null;
+
+  private flash(msg: string): void {
+    if (this.hubErr) this.hubErr.string = msg;
+  }
+
+  private openHub(tab: 'recruit' | 'equip' | 'elite' | 'shop'): void {
+    const s = this.session;
+    if (!s) return;
+    this.clearUi();
+    this.makeLabel(0, 306, '🧘 修行 · 养成（M2 演示）', 20);
+    const snap = s.snapshot();
+    const realmName = REALM_NAMES[snap.realm] ?? '?';
+    const bag = s.bagView().map((b) => `${b.name}×${b.count}`).join(' ') || '（空）';
+    const mates = s.partnerView().map((p) => (p.onField ? `★${p.name}` : p.name)).join('、') || '无';
+    this.makeLabel(0, 276, `铜钱 ${snap.copper} · Lv${snap.level} ${realmName}`, 15, DIM_COLOR);
+    this.makeLabel(0, 254, `伙伴：${mates} ｜ 背包：${bag}`, 13, DIM_COLOR);
+    // 顶栏 Tab
+    const tabs: Array<{ id: 'recruit' | 'equip' | 'elite' | 'shop'; label: string }> = [
+      { id: 'recruit', label: '招贤' },
+      { id: 'equip', label: '装备' },
+      { id: 'elite', label: '精英' },
+      { id: 'shop', label: '商店' },
+    ];
+    const xs = [-240, -80, 80, 240];
+    tabs.forEach((t, i) => {
+      const active = t.id === tab;
+      this.makeButton(xs[i] ?? 0, 218, 140, 46, t.label, () => this.openHub(t.id), active ? BTN_HI : BTN_COLOR);
+    });
+    this.hubErr = this.makeLabel(0, -250, '', 15, LOSE_COLOR);
+    this.makeButton(240, -306, 130, 44, '返回', () => this.renderPlayView(s.snapshot(), ''));
+    if (tab === 'recruit') this.renderHubRecruit();
+    else if (tab === 'equip') this.renderHubEquip();
+    else if (tab === 'elite') this.renderHubElite();
+    else this.renderHubShop();
+  }
+
+  private hubRow(y: number, text: string, btn: string | null, cb: (() => void) | null): void {
+    this.makeLabel(-110, y, text, 15);
+    if (btn && cb) this.makeButton(250, y, 170, 42, btn, cb);
+  }
+
+  private renderHubRecruit(): void {
+    const s = this.session;
+    if (!s) return;
+    const cfg = s.configsOf();
+    const rows: Array<{ text: string; btn: string | null; cb: (() => void) | null }> = [];
+    rows.push({ text: `单抽 ${cfg.recruitCfg.cost_single} 铜 / 十连 ${cfg.recruitCfg.cost_ten} 铜（十连保底）`, btn: null, cb: null });
+    for (const p of s.partnerView()) {
+      rows.push({ text: `${p.onField ? '★' : ''}${p.name} Lv${p.level}${p.onField ? '（上阵）' : '（待命）'}`, btn: null, cb: null });
+    }
+    rows.push({ text: '单抽', btn: '单抽 1 次', cb: () => this.doRecruit('single') });
+    rows.push({ text: '十连（第 10 抽保底高稀有）', btn: '十连', cb: () => this.doRecruit('ten') });
+    this.renderHubList(rows);
+  }
+
+  private doRecruit(mode: 'single' | 'ten'): void {
+    if (this.busy) return;
+    this.busy = true;
+    let msg = '';
+    try {
+      const r = this.session?.recruit(mode);
+      msg = `招到：${r?.joined.join('、') ?? ''}${mode === 'ten' ? '（含保底）' : ''}`;
+    } catch (e) {
+      msg = e instanceof Error ? e.message : String(e);
+    }
+    this.busy = false;
+    this.openHub('recruit'); // 重绘刷新伙伴/铜钱
+    this.flash(msg);
+  }
+
+  private renderHubEquip(): void {
+    const s = this.session;
+    if (!s) return;
+    const cfg = s.configsOf();
+    const rows: Array<{ text: string; btn: string | null; cb: (() => void) | null }> = [];
+    for (const e of s.heroEquipsView()) {
+      rows.push({ text: `${e.name}（${e.slot}）+${e.enhance}`, btn: e.slot === 'weapon' ? '强化武器' : null, cb: e.slot === 'weapon' ? () => this.doEnhance() : null });
+    }
+    for (const craftId of [...new Set(cfg.craft.map((c) => c.craft))]) {
+      const def = cfg.equip.find((d) => d.id === craftId);
+      if (!def) continue;
+      const need = needsOf(cfg.craft, craftId).map((n) => `${itemNameOf(cfg.item, n.itemId)}×${n.count}`).join(' ');
+      rows.push({ text: `${def.name}（${need}）`, btn: '打造并穿戴', cb: () => this.doCraft(craftId) });
+    }
+    this.renderHubList(rows);
+  }
+
+  private doCraft(equipId: string): void {
+    if (this.busy) return;
+    this.busy = true;
+    let msg = '';
+    try {
+      const made = this.session?.craftAndEquipHero(equipId);
+      msg = `打造成功：${made?.equipId}（已穿戴主角）`;
+    } catch (e) {
+      msg = e instanceof Error ? e.message : String(e);
+    }
+    this.busy = false;
+    this.openHub('equip');
+    this.flash(msg);
+  }
+
+  private doEnhance(): void {
+    if (this.busy) return;
+    this.busy = true;
+    let msg = '';
+    try {
+      const r = this.session?.enhanceHeroWeapon();
+      msg = `强化成功 → +${r?.enhance}（花费 ${r?.cost} 铜）`;
+    } catch (e) {
+      msg = e instanceof Error ? e.message : String(e);
+    }
+    this.busy = false;
+    this.openHub('equip');
+    this.flash(msg);
+  }
+
+  private renderHubElite(): void {
+    const s = this.session;
+    if (!s) return;
+    const rows: Array<{ text: string; btn: string | null; cb: (() => void) | null }> = [];
+    for (const e of s.eliteStatus()) {
+      rows.push({
+        text: `${e.name}（今日 ${e.remaining}/${e.limit} 次）`,
+        btn: e.remaining > 0 ? '⚔ 挑战' : null,
+        cb: e.remaining > 0 ? () => this.startElite(e.id) : null,
+      });
+    }
+    this.renderHubList(rows);
+  }
+
+  private renderHubShop(): void {
+    const s = this.session;
+    if (!s) return;
+    const cfg = s.configsOf();
+    const rows: Array<{ text: string; btn: string | null; cb: (() => void) | null }> = [];
+    for (const sh of cfg.shop) {
+      rows.push({ text: `${itemNameOf(cfg.item, sh.item)}（${sh.cost} 铜）`, btn: '购买', cb: () => this.doBuy(sh.item) });
+    }
+    this.renderHubList(rows);
+  }
+
+  private doBuy(itemId: string): void {
+    if (this.busy) return;
+    this.busy = true;
+    let msg = '';
+    try {
+      const r = this.session?.shopBuy(itemId, 1);
+      msg = `已购买（花费 ${r?.cost} 铜）`;
+    } catch (e) {
+      msg = e instanceof Error ? e.message : String(e);
+    }
+    this.busy = false;
+    this.openHub('shop');
+    this.flash(msg);
+  }
+
+  private renderHubList(rows: Array<{ text: string; btn: string | null; cb: (() => void) | null }>): void {
+    const max = 8;
+    const show = rows.slice(0, max);
+    show.forEach((row, i) => {
+      const y = 168 - i * 52;
+      this.hubRow(y, row.text, row.btn, row.cb);
+    });
+    if (rows.length > max) this.hubRow(168 - max * 52 - 8, `…另有 ${rows.length - max} 项`, null, null);
+  }
+
   // ── 战斗（自动播报）───────────────────────────────────────
+
+  private startElite(eliteId: string): void {
+    const s = this.session;
+    if (!s || this.busy) return;
+    const battle = s.buildEliteBattle(eliteId);
+    const elite = s.configsOf().elite.find((e) => e.id === eliteId);
+    if (!battle || !elite) return;
+    this.busy = true;
+    this.clearUi();
+    this.makeLabel(0, 300, `挑战精英「${elite.name}」（今日剩余次数：${s.eliteStatus().find((x) => x.id === eliteId)?.remaining ?? '?'}）`, 18);
+    this.logLabel = this.makeLabel(0, 40, '开战！', 18);
+    const result = runBattle({
+      seed: 8000 + eliteId.length * 17,
+      allies: battle.allies,
+      enemies: battle.enemies,
+      skillEffects: s.skillEffectsOf(),
+    });
+    const win = result.winner === 'ally';
+    const nameOf: Record<string, string> = {};
+    for (const u of [...battle.allies, ...battle.enemies]) nameOf[u.id] = u.name;
+    const lines = result.events.map((ev) => this.eventToText(ev, nameOf)).filter((t): t is string => t !== null);
+    const show = lines.length > 30 ? [...lines.slice(0, 15), '…（战况激烈，略）…', ...lines.slice(-13)] : lines;
+
+    let i = 0;
+    const onTick = (): void => {
+      if (!this.isValid) return;
+      if (i < show.length) {
+        this.logLabel!.string = show[i];
+        i++;
+        return;
+      }
+      this.unschedule(onTick);
+      let msg = '战败…（不扣次数，可再战）';
+      if (win) {
+        try {
+          s.onEliteWin(eliteId);
+          const got = s.configsOf().eliteReward.filter((r) => r.elite === eliteId);
+          msg = `胜利！获得：${got.map((r) => `${itemNameOf(s.configsOf().item, r.item)}×${r.count}`).join('、')}（次数 -1）`;
+        } catch (e) {
+          msg = `结算异常：${e instanceof Error ? e.message : String(e)}`;
+        }
+      }
+      this.logLabel!.color = win ? WIN_COLOR : LOSE_COLOR;
+      this.logLabel!.string = msg;
+      this.busy = false;
+      this.makeButton(0, -140, 260, 52, '返回修行', () => {
+        this.openHub('elite');
+      });
+    };
+    this.schedule(onTick, 0.3);
+  }
 
   private startBattle(): void {
     const s = this.session;
