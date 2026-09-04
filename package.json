@@ -6,7 +6,7 @@
   "scripts": {
     "check": "node -e \"console.log('[placeholder] lint/单测门禁将在 M0 代码落地后启用（见 .github/workflows/ci.yml）')\"",
     "test": "node --import ./tools/client-core-test/loader-entry.mjs --experimental-test-isolation=none --test \"battle-core/test/*.test.ts\" \"tools/save-prototype/test/*.test.ts\" \"tools/client-core-test/test/*.test.ts\" \"tools/excel2json/test/*.test.ts\"",
-    "demo": "node tools/m0-demo/run.ts",
+    "demo": "node --import ./tools/client-core-test/loader-entry.mjs tools/m0-demo/run.ts",
     "sim": "node tools/sim/run.ts"
   },
   "devDependencies": {

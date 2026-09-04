@@ -11,6 +11,9 @@ import { runBattle } from '../../battle-core/src/engine.ts';
 import { buildUnits } from '../../battle-core/src/setup.ts';
 import type { SkillRow, UnitRow } from '../../battle-core/src/setup.ts';
 import type { BattleEvent } from '../../battle-core/src/model.ts';
+import { REALM_NAMES } from '../../client/assets/scripts/modules/role/role-core.ts';
+import { clearStage, findStage } from '../../client/assets/scripts/modules/stage/stage-core.ts';
+import type { StageClearContext, StageRow } from '../../client/assets/scripts/modules/stage/stage-core.ts';
 import { AUTO_SLOT, SlotManager } from '../save-prototype/src/slots.ts';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -22,14 +25,14 @@ import { fileURLToPath } from 'node:url';
 const SEED = 20260904;
 const HERE = dirname(fileURLToPath(import.meta.url));
 
-function loadConfig(): { unitRows: unknown[]; skillRows: unknown[] } {
-  const unitJson = JSON.parse(readFileSync(join(HERE, '..', '..', 'config', 'export', 'unit.json'), 'utf8')) as unknown[];
-  const skillJson = JSON.parse(readFileSync(join(HERE, '..', '..', 'config', 'export', 'skill.json'), 'utf8')) as unknown[];
-  return { unitRows: unitJson, skillRows: skillJson };
+function loadTables(): { unitRows: unknown[]; skillRows: unknown[]; stageRows: unknown[] } {
+  const read = (name: string): unknown[] =>
+    JSON.parse(readFileSync(join(HERE, '..', '..', 'config', 'export', `${name}.json`), 'utf8')) as unknown[];
+  return { unitRows: read('unit'), skillRows: read('skill'), stageRows: read('stage') };
 }
 
 function demoBattle(): void {
-  const { unitRows, skillRows } = loadConfig();
+  const { unitRows, skillRows } = loadTables();
   const units = buildUnits(unitRows as UnitRow[], skillRows as SkillRow[], 'ally'); // 先以 ally 侧构建全部，随后按序分队
   const allies = units.slice(0, 3).map((u) => ({ ...u, side: 'ally' as const }));
   const enemies = buildUnits(unitRows.slice(3) as UnitRow[], skillRows as SkillRow[], 'enemy');
@@ -123,6 +126,52 @@ function dump(mgr: SlotManager): void {
   console.log(`  ── 槽位状态 ──\n${summary}`);
 }
 
+// ── 3. 主线推进演示（M1-8：关卡表驱动，battle → 通关结算 → 经验/铜钱/进度）──
+
+function demoStage(): void {
+  console.log('\n[3] 主线推进（第一章 10 关 · 配置 config/export/stage.json · 数值占位）');
+  const { unitRows, skillRows, stageRows } = loadTables();
+  const allies = buildUnits(unitRows.slice(0, 3) as UnitRow[], skillRows as SkillRow[], 'ally');
+  const ctx: StageClearContext = {
+    player: { name: '云骞', level: 1, exp: 0, realm: 0, copper: 0 },
+    progress: { chapter: 1, node: 1, towerBest: 0 },
+  };
+  let seed = 1000;
+  while (ctx.progress.node > 0) {
+    const stage = findStage(stageRows as StageRow[], ctx.progress.chapter, ctx.progress.node);
+    if (!stage) {
+      console.log('  关卡表缺失，止步');
+      return;
+    }
+    const enemyIds = Array.isArray(stage.enemies) ? stage.enemies : [stage.enemies];
+    const enemies = buildUnits(
+      (unitRows as UnitRow[]).filter((u) => enemyIds.includes(u.id)),
+      skillRows as SkillRow[],
+      'enemy',
+    );
+    // 单机推图允许反复挑战当前关（每次新种子；成长数值定稿后失败率会显著下降）
+    let r = runBattle({ seed: seed++, allies, enemies });
+    let attempts = 1;
+    while (r.winner !== 'ally' && attempts < 50) {
+      r = runBattle({ seed: seed++, allies, enemies });
+      attempts++;
+    }
+    if (r.winner !== 'ally') {
+      console.log(`  ✗ ${stage.id}「${stage.name}」挑战 ${attempts} 次未胜，止步于 Lv${ctx.player.level}`);
+      return;
+    }
+    const retryNote = attempts > 1 ? `（第 ${attempts} 次挑战成功）` : '';
+    const res = clearStage(ctx, stageRows as StageRow[], stage);
+    const realmName = REALM_NAMES[ctx.player.realm] ?? '?';
+    const levelUp = res.grow.levelUps > 0 ? `（升 ${res.grow.levelUps} 级${res.grow.realmUps > 0 ? `·突破${realmName}` : ''}！）` : '';
+    console.log(
+      `  ✓ ${stage.id}「${stage.name}」通关${retryNote}（${r.rounds} 回合）：+${stage.exp_reward} 经验 +${stage.copper_reward} 铜钱${levelUp} → Lv${ctx.player.level} ${realmName}，铜钱 ${ctx.player.copper}`,
+    );
+  }
+  console.log(`  第一章通关 ✅（最终 Lv${ctx.player.level} ${REALM_NAMES[ctx.player.realm]}，铜钱 ${ctx.player.copper}）`);
+}
+
 demoBattle();
 demoSave();
+demoStage();
 console.log('\n演示完成 ✅（本 demo 不产生任何持久文件）');
