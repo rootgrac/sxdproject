@@ -25,7 +25,7 @@ import {
 } from 'node:fs';
 import { join } from 'node:path';
 
-export const CURRENT_SAVE_VERSION = 3;
+export const CURRENT_SAVE_VERSION = 4;
 
 export interface SaveMeta {
   createdAt: number;
@@ -53,6 +53,8 @@ export interface SaveData {
   bag: unknown[];
   /** M2 上阵配置：伙伴位（主角常驻不占位）；值为伙伴实例 uid（v3 起） */
   party: { partnerSlots: (string | null)[] };
+  /** M2 每日状态（精英次数等；v4 起，按本地日历 dateKey 惰性重置） */
+  daily: { dateKey: string; elites: Record<string, number> };
   progress: { chapter: number; node: number; towerBest: number };
   achievements: { unlocked: string[]; claimed: string[] };
   mailbox: unknown[];
@@ -71,6 +73,7 @@ export function createSaveData(name = '无名散修'): SaveData {
     equips: [],
     bag: [],
     party: { partnerSlots: [null, null] },
+    daily: { dateKey: '', elites: {} },
     progress: { chapter: 1, node: 1, towerBest: 0 },
     achievements: { unlocked: [], claimed: [] },
     mailbox: [],
@@ -130,6 +133,14 @@ const migrations: Record<number, Migration> = {
     const slots = party && Array.isArray(party.partnerSlots) ? party.partnerSlots : [null, null];
     while (slots.length < PARTNER_SLOT_COUNT) slots.push(null);
     next.party = { partnerSlots: slots.slice(0, PARTNER_SLOT_COUNT) };
+    return next;
+  },
+  // v3 → v4：新增 daily 每日状态（精英次数等；dateKey 为本地日期串）
+  3: (raw) => {
+    const next = { ...raw, saveVersion: 4 };
+    const daily = raw.daily as { dateKey?: unknown; elites?: unknown } | undefined;
+    const elites = daily && typeof daily.elites === 'object' && daily.elites !== null ? { ...(daily.elites as Record<string, number>) } : {};
+    next.daily = { dateKey: (daily && typeof daily.dateKey === 'string' ? daily.dateKey : ''), elites };
     return next;
   },
 };

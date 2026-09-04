@@ -1,0 +1,9 @@
+# 精英掉落（固定掉落表；概率掉落后置）
+
+id	elite	item	count
+str	ref:elite.id	ref:item.id	int
+掉落ID	来源精英	物品	数量
+er1	e_e1	it_iron	2
+er2	e_e1	it_spirit	1
+er3	e_e2	it_iron	3
+er4	e_e2	it_blueprint_w2	1

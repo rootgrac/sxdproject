@@ -1,0 +1,26 @@
+[
+  {
+    "id": "er1",
+    "elite": "e_e1",
+    "item": "it_iron",
+    "count": 2
+  },
+  {
+    "id": "er2",
+    "elite": "e_e1",
+    "item": "it_spirit",
+    "count": 1
+  },
+  {
+    "id": "er3",
+    "elite": "e_e2",
+    "item": "it_iron",
+    "count": 3
+  },
+  {
+    "id": "er4",
+    "elite": "e_e2",
+    "item": "it_blueprint_w2",
+    "count": 1
+  }
+]

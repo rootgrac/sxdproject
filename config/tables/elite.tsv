@@ -1,0 +1,7 @@
+# 精英副本（M2-6：每日次数限制、高阶材料产出）
+
+id	name	enemies	stamina_cost	daily_limit
+str	str	ref:unit.id	int	int
+精英ID	名称	敌方阵容	体力消耗(占位)	每日次数
+e_e1	沉沙涧	u004;u005	5	3
+e_e2	铁脊岭	u005;u006	5	2

@@ -1,0 +1,20 @@
+[
+  {
+    "id": "s1",
+    "item": "it_iron",
+    "cost": 100,
+    "limit": 0
+  },
+  {
+    "id": "s2",
+    "item": "it_spirit",
+    "cost": 200,
+    "limit": 0
+  },
+  {
+    "id": "s3",
+    "item": "it_scroll",
+    "cost": 500,
+    "limit": 0
+  }
+]

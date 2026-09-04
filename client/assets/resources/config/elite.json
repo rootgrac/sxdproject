@@ -1,0 +1,22 @@
+[
+  {
+    "id": "e_e1",
+    "name": "沉沙涧",
+    "enemies": [
+      "u004",
+      "u005"
+    ],
+    "stamina_cost": 5,
+    "daily_limit": 3
+  },
+  {
+    "id": "e_e2",
+    "name": "铁脊岭",
+    "enemies": [
+      "u005",
+      "u006"
+    ],
+    "stamina_cost": 5,
+    "daily_limit": 2
+  }
+]

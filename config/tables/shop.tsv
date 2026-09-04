@@ -1,0 +1,8 @@
+# 杂货商店（M2-5b：铜钱购买入包；limit=0 不限购）
+
+id	item	cost	limit
+str	ref:item.id	int	int
+条目ID	商品(物品)	价格(铜钱)	每日限购(0=不限)
+s1	it_iron	100	0
+s2	it_spirit	200	0
+s3	it_scroll	500	0

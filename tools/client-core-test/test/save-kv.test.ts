@@ -110,7 +110,7 @@ test('create 保护：占用槽位或更高版本档拒绝覆盖', () => {
   assert.equal(store.read()?.data.player.name, '丁');
 });
 
-test('版本迁移：v1 → v3 链式升级（mailbox + party）', () => {
+test('版本迁移：v1 → 当前版本链式升级（mailbox + party + daily）', () => {
   const { kv, store } = mk();
   const v1 = {
     saveVersion: 1,
@@ -131,19 +131,33 @@ test('版本迁移：v1 → v3 链式升级（mailbox + party）', () => {
   assert.deepEqual(r.data.mailbox, []);
   assert.deepEqual(r.data.party.partnerSlots, [null, null]); // v3 party 就位
   assert.equal(r.data.player.level, 12); // 旧数据完整保留
+  assert.deepEqual(r.data.party.partnerSlots, [null, null]);
+  assert.deepEqual(r.data.daily, { dateKey: '', elites: {} }); // v4 daily 就位
   const snap = decodeFile(kv.raw('slot1.backup_v1.json') as string).data;
   assert.equal(snap.saveVersion, 1); // 迁移前原始档已另存
 });
 
-test('版本迁移：v2（无 party）→ v3 补 party 槽位', () => {
+test('版本迁移：v2（无 party）→ 当前版本补 party 槽位', () => {
   const { kv, store } = mk();
   const v2 = { ...createSaveData('旧档'), saveVersion: 2 } as unknown as Record<string, unknown>;
   delete (v2 as { party?: unknown }).party;
   kv.set('slot1.json', encodeFile(v2 as never));
   const r = store.read();
   assert.ok(r);
-  assert.equal(r.data.saveVersion, 3);
+  assert.equal(r.data.saveVersion, CURRENT_SAVE_VERSION);
   assert.deepEqual(r.data.party.partnerSlots, [null, null]);
+  assert.deepEqual(r.data.daily, { dateKey: '', elites: {} });
+});
+
+test('版本迁移：v3（无 daily）→ v4 补每日状态', () => {
+  const { kv, store } = mk();
+  const v3 = { ...createSaveData('旧档'), saveVersion: 3 } as unknown as Record<string, unknown>;
+  delete (v3 as { daily?: unknown }).daily;
+  kv.set('slot1.json', encodeFile(v3 as never));
+  const r = store.read();
+  assert.ok(r);
+  assert.equal(r.data.saveVersion, CURRENT_SAVE_VERSION);
+  assert.deepEqual(r.data.daily, { dateKey: '', elites: {} });
 });
 
 test('summary 状态：ok / recoverable / empty / corrupt', () => {
