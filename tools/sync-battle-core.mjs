@@ -6,14 +6,16 @@
  * - Cocos 的 TS 编译不支持相对 import 带 ".ts" 扩展名（Node 24 直跑则需要），故同步时去除
  *
  * 维护规则：
- * - client/assets/scripts/battle-core 为**自动生成目录，禁止手改**
+ * - client/assets/scripts/battle-core/src 的 .ts 为**自动生成，禁止手改**
  * - 修改根 battle-core 后运行：node tools/sync-battle-core.mjs
+ * - **保留 Cocos 的 .meta 文件**（脚本 uuid 必须稳定，删除 meta 会导致引用失效）
+ * - 仅覆盖 .ts 内容、删除源中已不存在的 .ts（连同其 .meta）
  * - CI 未来增加一致性校验（比较源与同步产物）
  *
  * 运行：node tools/sync-battle-core.mjs
  */
-import { cpSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const toolsDir = dirname(fileURLToPath(import.meta.url));
@@ -35,16 +37,28 @@ function stripTsExtensions(content) {
   return content.replace(/(\bfrom\s+['"])(\.\.?\/[^'"]*?)\.ts(['"])/g, '$1$2$3');
 }
 
-rmSync(dstDir, { recursive: true, force: true });
-mkdirSync(dstDir, { recursive: true });
-cpSync(srcDir, dstDir, { recursive: true });
+// 1) 收集源文件相对路径
+const srcFiles = listTs(srcDir);
+const relList = srcFiles.map((f) => relative(srcDir, f).split(sep).join('/'));
 
-let count = 0;
+// 2) 删除目标中源已不存在的 .ts（连同其 .meta）
 for (const f of listTs(dstDir)) {
-  const rel = f.slice(dstDir.length);
+  const rel = relative(dstDir, f).split(sep).join('/');
+  if (!relList.includes(rel)) {
+    rmSync(f, { force: true });
+    rmSync(`${f}.meta`, { force: true });
+    console.log(`  移除陈旧文件：${rel}`);
+  }
+}
+
+// 3) 覆盖/新增 .ts（保留 .meta）
+let count = 0;
+for (const f of srcFiles) {
+  const rel = relative(srcDir, f).split(sep).join('/');
+  const out = join(dstDir, rel);
+  mkdirSync(dirname(out), { recursive: true });
   const text = readFileSync(f, 'utf8');
-  const stripped = stripTsExtensions(text);
-  if (stripped !== text) writeFileSync(f, stripped, 'utf8');
+  writeFileSync(out, stripTsExtensions(text), 'utf8');
   count++;
 }
 
@@ -54,7 +68,7 @@ writeFileSync(
     '# client/assets/scripts/battle-core — 自动生成目录（勿手改）',
     '',
     '来源：根目录 `battle-core/src`（M0 纯 TS 确定性战斗内核），由 `tools/sync-battle-core.mjs` 同步。',
-    '同步时仅去除相对 import 的 `.ts` 扩展名（Cocos 编译器要求）。',
+    '同步时仅去除相对 import 的 `.ts` 扩展名（Cocos 编译器要求）；**保留本目录 .meta（uuid 稳定）**。',
     '',
     '修改源码请改根 `battle-core/`，然后运行：`node tools/sync-battle-core.mjs`',
     '',
@@ -62,4 +76,4 @@ writeFileSync(
   'utf8',
 );
 
-console.log(`battle-core 同步完成：${count} 个 .ts → client/assets/scripts/battle-core/src/`);
+console.log(`battle-core 同步完成：${count} 个 .ts（.meta 已保留）`);
