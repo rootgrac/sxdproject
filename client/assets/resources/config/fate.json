@@ -1,0 +1,101 @@
+[
+  {
+    "id": "f1",
+    "name": "微光·破军",
+    "stat": "atk",
+    "value": 25,
+    "set_id": 0,
+    "weight": 40,
+    "rarity": 1
+  },
+  {
+    "id": "f2",
+    "name": "微光·长寿",
+    "stat": "hp",
+    "value": 150,
+    "set_id": 0,
+    "weight": 40,
+    "rarity": 1
+  },
+  {
+    "id": "f3",
+    "name": "流辉·北辰一",
+    "stat": "atk",
+    "value": 35,
+    "set_id": 1,
+    "weight": 30,
+    "rarity": 2
+  },
+  {
+    "id": "f4",
+    "name": "流辉·北辰二",
+    "stat": "def",
+    "value": 25,
+    "set_id": 1,
+    "weight": 30,
+    "rarity": 2
+  },
+  {
+    "id": "f5",
+    "name": "流辉·镇岳一",
+    "stat": "def",
+    "value": 30,
+    "set_id": 2,
+    "weight": 30,
+    "rarity": 2
+  },
+  {
+    "id": "f6",
+    "name": "流辉·镇岳二",
+    "stat": "hp",
+    "value": 180,
+    "set_id": 2,
+    "weight": 30,
+    "rarity": 2
+  },
+  {
+    "id": "f7",
+    "name": "曜华·天枢",
+    "stat": "atk",
+    "value": 70,
+    "set_id": 0,
+    "weight": 15,
+    "rarity": 3
+  },
+  {
+    "id": "f8",
+    "name": "曜华·摇光",
+    "stat": "def",
+    "value": 55,
+    "set_id": 0,
+    "weight": 15,
+    "rarity": 3
+  },
+  {
+    "id": "f9",
+    "name": "微光·贯日",
+    "stat": "atk",
+    "value": 25,
+    "set_id": 0,
+    "weight": 40,
+    "rarity": 1
+  },
+  {
+    "id": "f10",
+    "name": "微光·守岳",
+    "stat": "def",
+    "value": 20,
+    "set_id": 0,
+    "weight": 40,
+    "rarity": 1
+  },
+  {
+    "id": "f11",
+    "name": "微光·星陨",
+    "stat": "hp",
+    "value": 150,
+    "set_id": 0,
+    "weight": 40,
+    "rarity": 1
+  }
+]

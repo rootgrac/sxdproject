@@ -108,6 +108,9 @@ const CFG: GameConfigs = {
     { day: 1, copper: 500, item: 'it_iron' },
     { day: 2, copper: 800, item: '' },
   ],
+  fate: [],
+  fateSet: [],
+  fateCfg: { cost_single: 600, cost_ten: 5400, guarantee_rarity: 3 },
 };
 
 test('会话集成：通关/招募推进每日任务，签到发奖，宝箱领取', () => {

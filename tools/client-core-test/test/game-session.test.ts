@@ -67,6 +67,9 @@ const CFG: GameConfigs = {
   tasks: [],
   taskBox: [],
   signIn: [],
+  fate: [],
+  fateSet: [],
+  fateCfg: { cost_single: 600, cost_ten: 5400, guarantee_rarity: 3 },
 };
 
 function mk(): { kv: MemoryKV; session: GameSession } {

@@ -107,8 +107,11 @@ export class BattleGameBoot extends Component {
       load('config/task'),
       load('config/task_box'),
       load('config/sign_in'),
+      load('config/fate'),
+      load('config/fate_set'),
+      load('config/fate_cfg'),
     ]).then(
-      ([units, skills, effectRows, stages, recruit, recruitCfg, equip, item, craft, shop, elite, eliteReward, tasks, taskBox, signIn]) => ({
+      ([units, skills, effectRows, stages, recruit, recruitCfg, equip, item, craft, shop, elite, eliteReward, tasks, taskBox, signIn, fate, fateSet, fateCfg]) => ({
         units: units as GameConfigs['units'],
         skills: skills as GameConfigs['skills'],
         effectRows: effectRows as GameConfigs['effectRows'],
@@ -124,6 +127,9 @@ export class BattleGameBoot extends Component {
         tasks: tasks as GameConfigs['tasks'],
         taskBox: taskBox as GameConfigs['taskBox'],
         signIn: signIn as GameConfigs['signIn'],
+        fate: fate as GameConfigs['fate'],
+        fateSet: fateSet as GameConfigs['fateSet'],
+        fateCfg: fateCfg as GameConfigs['fateCfg'],
       }),
     );
   }

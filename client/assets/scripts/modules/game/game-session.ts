@@ -41,6 +41,11 @@ import { claimBox, notifyTask, progressView } from '../task/task-core';
 import type { DailyTasks, TaskBoxRow, TaskRow, TaskType } from '../task/task-core';
 import { rewardOf, signIn, signInStatusOf } from '../task/signin-core';
 import type { SignInRow } from '../task/signin-core';
+import { addFateOrEvolve, autoEquip, equippedFates, sumFateBonus } from '../fate/fate-core';
+import { sumBonus } from '../equip/equip-core';
+import type { EquipDefRow } from '../equip/equip-core';
+import type { FateCfgRow, FateDefRow, FateSetRow, FateState } from '../fate/fate-core';
+import type { EquipState } from '../equip/equip-core';
 
 /** 游戏所需全部配置行（Cocos resources / 测试注入） */
 export interface GameConfigs {
@@ -59,6 +64,9 @@ export interface GameConfigs {
   tasks: TaskRow[];
   taskBox: TaskBoxRow[];
   signIn: SignInRow[];
+  fate: FateDefRow[];
+  fateSet: FateSetRow[];
+  fateCfg: FateCfgRow;
 }
 
 /** 主角固定 unit */
@@ -90,6 +98,7 @@ export class GameSession {
   private readonly rand: () => number;
   private readonly slots: SlotManager;
   private readonly recruitHall: RecruitHall;
+  private readonly fateHall: RecruitHall;
   private manager: SaveManager | null = null;
   private data: SaveData | null = null;
   private currentSlot: ManualSlot = 'slot1';
@@ -106,6 +115,12 @@ export class GameSession {
       configs.recruitCfg,
       configs.recruit,
       new Map(configs.units.map((u) => [u.id, u.recruit_level ?? 0])),
+    );
+    // 观星池：命格表行直接作为抽取条目（无等级门槛）
+    this.fateHall = new RecruitHall(
+      configs.fateCfg,
+      configs.fate.map((f) => ({ unit: f.id, weight: f.weight, rarity: f.rarity })),
+      new Map<string, number>(),
     );
   }
 
@@ -237,9 +252,31 @@ export class GameSession {
     const stage = this.currentStage();
     if (!stage) return null;
     const allyRows = this.partyUnitRows();
-    const allies = buildUnits(allyRows, this.configs.skills, 'ally').map((u, i) => ({ ...u, position: i }));
+    // 主角携带装备与命格加成（M2/M3 养成入战斗；UnitRow 平铺字段）
+    const heroB = this.heroBonuses();
+    const first = allyRows[0];
+    const boosted = first
+      ? [
+          { ...first, hp: first.hp + heroB.hp, atk: first.atk + heroB.atk, def: first.def + heroB.def },
+          ...allyRows.slice(1),
+        ]
+      : allyRows;
+    const allies = buildUnits(boosted, this.configs.skills, 'ally').map((u, i) => ({ ...u, position: i }));
     const enemyIds = Array.isArray(stage.enemies) ? stage.enemies : [stage.enemies];
     return { allies, enemies: this.enemyUnits(enemyIds) };
+  }
+
+  /** 主角养成加成（已穿装备 + 装配命格） */
+  heroBonuses(): { atk: number; def: number; hp: number } {
+    const data = this.guardData();
+    const equipB = sumBonus(this.configs.equip, data.equips as EquipState[], 'hero');
+    const fateB = sumFateBonus(
+      this.configs.fate,
+      this.configs.fateSet,
+      data.fates as FateState[],
+      data.fateParty.slots as (string | null)[],
+    );
+    return { atk: equipB.atk + fateB.atk, def: equipB.def + fateB.def, hp: equipB.hp + fateB.hp };
   }
 
   skillEffectsOf(): Record<string, SkillEffectDef[]> {
@@ -492,5 +529,59 @@ export class GameSession {
       this.flushNow();
     }
     return n;
+  }
+
+  // ── 观星 / 命格（M3-4）───────────────────────────────────
+
+  /**
+   * 观星：单抽/十连（十连保底最高稀有，机制同招贤）；
+   * 结果处理：新命格 → 入收藏并自动装配；已拥有 → 自动精进同名 +1 级。
+   */
+  observeFate(mode: 'single' | 'ten'): { results: { fateId: string; rarity: number }[]; events: { kind: 'new' | 'evolve'; name: string; level: number }[]; cost: number } {
+    const data = this.guardData();
+    const wallet = { copper: data.player.copper };
+    const outcome = this.fateHall.recruit({ copper: wallet.copper, playerLevel: 1, ownedUnitIds: new Set(), rand: this.rand }, mode);
+    wallet.copper -= outcome.cost;
+    data.player.copper = wallet.copper;
+    const fates = data.fates as FateState[];
+    const slots = data.fateParty.slots as (string | null)[];
+    const byId = new Map(this.configs.fate.map((f) => [f.id, f]));
+    const events: { kind: 'new' | 'evolve'; name: string; level: number }[] = [];
+    for (const r of outcome.results) {
+      const def = byId.get(r.unit);
+      if (!def) continue;
+      const ev = addFateOrEvolve(fates, def, this.nextUid());
+      events.push({ kind: ev.kind, name: def.name, level: ev.level });
+      if (ev.kind === 'new') {
+        try {
+          autoEquip(slots, ev.uid); // 自动装配（满槽忽略，UI 可卸）
+        } catch {
+          // 槽满：仅收藏
+        }
+      }
+    }
+    this.manager?.markDirty();
+    this.flushNow();
+    return { results: outcome.results.map((x) => ({ fateId: x.unit, rarity: x.rarity })), events, cost: outcome.cost };
+  }
+
+  /** 命格视图：装配槽 + 总加成 */
+  fateView(): { equipped: { name: string; level: number }[]; empty: number; bonus: { atk: number; def: number; hp: number } } {
+    const data = this.guardData();
+    const byId = new Map(this.configs.fate.map((f) => [f.id, f]));
+    const equipped = equippedFates(data.fates as FateState[], data.fateParty.slots as (string | null)[])
+      .map((f) => ({ name: byId.get(f.fateId)?.name ?? f.fateId, level: f.level }));
+    const empty = (data.fateParty.slots as (string | null)[]).filter((s) => s === null).length;
+    return { equipped, empty, bonus: this.heroBonuses() };
+  }
+
+  /** 卸下指定槽命格 */
+  unequipFateSlot(index: number): void {
+    const data = this.guardData();
+    const slots = data.fateParty.slots as (string | null)[];
+    if (index < 0 || index >= slots.length) throw new Error(`命格槽位越界：${index}`);
+    slots[index] = null;
+    this.manager?.markDirty();
+    this.flushNow();
   }
 }

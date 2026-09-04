@@ -1,0 +1,16 @@
+# 命格表（M3-4 观星/星命：stat=atk/def/hp；rarity 1微光 2流辉 3曜华；set_id 0=无套装）
+
+id	name	stat	value	set_id	weight	rarity
+str	str	str	int	int	int	int
+命格ID	名称	加成属性	每级数值	套装ID	观星权重	稀有度
+f1	微光·破军	atk	25	0	40	1
+f2	微光·长寿	hp	150	0	40	1
+f3	流辉·北辰一	atk	35	1	30	2
+f4	流辉·北辰二	def	25	1	30	2
+f5	流辉·镇岳一	def	30	2	30	2
+f6	流辉·镇岳二	hp	180	2	30	2
+f7	曜华·天枢	atk	70	0	15	3
+f8	曜华·摇光	def	55	0	15	3
+f9	微光·贯日	atk	25	0	40	1
+f10	微光·守岳	def	20	0	40	1
+f11	微光·星陨	hp	150	0	40	1

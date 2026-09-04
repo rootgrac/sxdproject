@@ -25,7 +25,7 @@ import {
 } from 'node:fs';
 import { join } from 'node:path';
 
-export const CURRENT_SAVE_VERSION = 5;
+export const CURRENT_SAVE_VERSION = 6;
 
 export interface SaveMeta {
   createdAt: number;
@@ -79,6 +79,8 @@ export function createSaveData(name = '无名散修'): SaveData {
     equips: [],
     bag: [],
     party: { partnerSlots: [null, null] },
+    fates: [],
+    fateParty: { slots: [null, null, null, null, null, null, null, null] },
     daily: { dateKey: '', elites: {}, tasks: {}, claimedBoxes: [], signIn: { streak: 0, lastKey: '' } },
     progress: { chapter: 1, node: 1, towerBest: 0 },
     achievements: { unlocked: [], claimed: [] },
@@ -165,7 +167,19 @@ const migrations: Record<number, Migration> = {
       signIn: { streak: si && typeof si.streak === 'number' ? si.streak : 0, lastKey: si && typeof si.lastKey === 'string' ? si.lastKey : '' },
     };
     return next;
+  },  // v5 → v6：新增 fates/fateParty（M3 命格观星）
+  5: (raw) => {
+    const next = { ...raw, saveVersion: 6 };
+    const fates = Array.isArray(raw.fates) ? (raw.fates as { uid: string; fateId: string; level?: number }[]).map((x) => ({ uid: x.uid, fateId: x.fateId, level: typeof x.level === 'number' && x.level >= 1 ? x.level : 1 })) : [];
+    const fp = raw.fateParty as { slots?: unknown } | undefined;
+    let slots = fp && Array.isArray(fp.slots) ? (fp.slots as (string | null)[]) : [];
+    while (slots.length < 8) slots.push(null);
+    slots = slots.slice(0, 8);
+    next.fates = fates;
+    next.fateParty = { slots };
+    return next;
   },
+
 };
 
 // ── 存储 ───────────────────────────────────────────────────

@@ -1,0 +1,7 @@
+# 命格套装效果（件数达标追加加成）
+
+id	set_id	need	stat	value
+str	int	int	str	int
+效果ID	套装ID	所需件数	加成属性	加成值
+s1	1	2	atk	30
+s2	2	2	def	25

@@ -1,0 +1,16 @@
+[
+  {
+    "id": "s1",
+    "set_id": 1,
+    "need": 2,
+    "stat": "atk",
+    "value": 30
+  },
+  {
+    "id": "s2",
+    "set_id": 2,
+    "need": 2,
+    "stat": "def",
+    "value": 25
+  }
+]
