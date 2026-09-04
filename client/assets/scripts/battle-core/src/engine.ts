@@ -46,9 +46,24 @@ export function runBattle(input: BattleInput): BattleResult {
 
   const sideAlive = (s: Side): boolean => units.some((u) => u.side === s && u.hp > 0);
 
+  /** 站位列：未布阵单位视为后排（col=2），保证既有行为兼容 */
+  const colOf = (u: Unit): number => (u.position === undefined ? 2 : u.position % 3);
+
+  /** 目标选择（M1-5）：敌方存活中「列号最小」优先（前排先承受攻击），同列保持阵容顺序 */
   const firstTargetOf = (u: Unit): Unit | null => {
     const foe: Side = u.side === 'ally' ? 'enemy' : 'ally';
-    return units.find((x) => x.side === foe && x.hp > 0) ?? null;
+    let best: Unit | null = null;
+    let bestCol = Number.MAX_SAFE_INTEGER;
+    for (const x of units) {
+      if (x.side === foe && x.hp > 0) {
+        const c = colOf(x);
+        if (c < bestCol) {
+          bestCol = c;
+          best = x;
+        }
+      }
+    }
+    return best;
   };
 
   const buffListOf = (u: Unit): BattleBuff[] => {
@@ -60,13 +75,19 @@ export function runBattle(input: BattleInput): BattleResult {
     return list;
   };
 
-  /** 属性乘区（含增减益）：base × (1 + Σmult)；buff 在 [施放回合, untilRound) 内生效 */
+  /** 属性乘区：基础值 × (1 + 增减益 + 站位加成)；buff 在 [施放回合, untilRound) 内生效 */
   const effStat = (u: Unit, stat: 'atk' | 'def', round: number): number => {
     let multSum = 0;
     for (const b of buffListOf(u)) {
       if (b.stat === stat && round < b.untilRound) multSum += b.mult;
     }
-    return u.stats[stat] * (1 + multSum);
+    let bonus = 0;
+    if (u.position !== undefined) {
+      const col = colOf(u);
+      if (col === 0 && stat === 'def') bonus += cfg.frontDef;
+      if (col === 2 && stat === 'atk') bonus += cfg.backAtk;
+    }
+    return u.stats[stat] * (1 + multSum + bonus);
   };
 
   /** 伤害判定（含暴击与增减益），不修改状态 */

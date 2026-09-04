@@ -29,6 +29,11 @@ export interface Unit {
   skillId: string;
   /** 绝技伤害倍率（由技能配置注入，M1-3）；缺省回退 BattleConfig.skillRatio */
   skillRatio?: number;
+  /**
+   * 3×3 九宫格站位（M1-5）：0..8，col = position % 3（0=前排/近敌，2=后排），row = floor(position/3)。
+   * 未设置（undefined）的单位视为后排 col2（不参与任何站位加成，保持既有行为兼容）。
+   */
+  position?: number;
   stats: UnitStats;
 }
 
@@ -65,6 +70,8 @@ export interface BattleConfig {
   critMult: number;       // 暴击倍率
   minHitChance: number;   // 命中率下限
   maxHitChance: number;   // 命中率上限
+  frontDef: number;       // 站位加成：前排(col0)防御乘区（M1-5；默认 0 = 未启用）
+  backAtk: number;        // 站位加成：后排(col2)攻击乘区（M1-5；默认 0 = 未启用）
 }
 
 export const DEFAULT_BATTLE_CONFIG: BattleConfig = {
@@ -77,6 +84,8 @@ export const DEFAULT_BATTLE_CONFIG: BattleConfig = {
   critMult: 1.5,
   minHitChance: 0.05,
   maxHitChance: 0.95,
+  frontDef: 0,
+  backAtk: 0,
 };
 
 export const DEFAULT_STATS: UnitStats = {
@@ -95,6 +104,7 @@ export interface MakeUnitOptions {
   hp?: number;
   skillId?: string;
   skillRatio?: number;
+  position?: number;
   stats?: Partial<UnitStats>;
 }
 
@@ -110,6 +120,7 @@ export function makeUnit(o: MakeUnitOptions): Unit {
     qi: 0,
     skillId: o.skillId ?? 'ultimate',
     skillRatio: o.skillRatio,
+    position: o.position,
     stats: { ...DEFAULT_STATS, ...o.stats },
   };
 }
