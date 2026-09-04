@@ -1,0 +1,11 @@
+# 物品表（M2-5：材料/图纸/道具；背包堆叠存储 itemId+count）
+
+id	name	kind
+str	str	str
+物品ID	物品名	类型(material材料/consumable道具/blueprint图纸)
+it_iron	精铁	material
+it_spirit	灵砂	material
+it_scroll	淬火符	consumable
+it_blueprint_w2	图纸·重岳刀	blueprint
+it_blueprint_a2	图纸·玄铁甲	blueprint
+it_blueprint_o1	图纸·聚灵珠	blueprint

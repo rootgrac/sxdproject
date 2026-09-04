@@ -1,0 +1,38 @@
+[
+  {
+    "id": "cr1",
+    "craft": "eq_w2",
+    "item": "it_iron",
+    "count": 3
+  },
+  {
+    "id": "cr2",
+    "craft": "eq_w2",
+    "item": "it_spirit",
+    "count": 1
+  },
+  {
+    "id": "cr3",
+    "craft": "eq_a2",
+    "item": "it_iron",
+    "count": 4
+  },
+  {
+    "id": "cr4",
+    "craft": "eq_a2",
+    "item": "it_spirit",
+    "count": 2
+  },
+  {
+    "id": "cr5",
+    "craft": "eq_o1",
+    "item": "it_iron",
+    "count": 2
+  },
+  {
+    "id": "cr6",
+    "craft": "eq_o1",
+    "item": "it_spirit",
+    "count": 5
+  }
+]

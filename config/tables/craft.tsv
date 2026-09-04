@@ -1,0 +1,11 @@
+# 打造配方（M2-4：产出装备 = 材料清单；可打造装备集 = 本表 distinct craft）
+
+id	craft	item	count
+str	ref:equip.id	ref:item.id	int
+配方ID	产出装备	消耗物品	数量
+cr1	eq_w2	it_iron	3
+cr2	eq_w2	it_spirit	1
+cr3	eq_a2	it_iron	4
+cr4	eq_a2	it_spirit	2
+cr5	eq_o1	it_iron	2
+cr6	eq_o1	it_spirit	5

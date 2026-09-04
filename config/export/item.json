@@ -1,0 +1,32 @@
+[
+  {
+    "id": "it_iron",
+    "name": "精铁",
+    "kind": "material"
+  },
+  {
+    "id": "it_spirit",
+    "name": "灵砂",
+    "kind": "material"
+  },
+  {
+    "id": "it_scroll",
+    "name": "淬火符",
+    "kind": "consumable"
+  },
+  {
+    "id": "it_blueprint_w2",
+    "name": "图纸·重岳刀",
+    "kind": "blueprint"
+  },
+  {
+    "id": "it_blueprint_a2",
+    "name": "图纸·玄铁甲",
+    "kind": "blueprint"
+  },
+  {
+    "id": "it_blueprint_o1",
+    "name": "图纸·聚灵珠",
+    "kind": "blueprint"
+  }
+]
