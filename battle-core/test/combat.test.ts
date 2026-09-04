@@ -67,7 +67,10 @@ test('普攻积气势（+qiGainAttack），气势满后下一行动释放绝技�
   assert.ok(skill && skill.type === 'skill');
   assert.equal(skill.round, 2); // 第一回合普攻攒气，第二回合开绝技
   assert.equal(skill.actorQi, 0); // 绝技后气势清零
-  assert.ok(skill.damage > 0);
+  // 伤害段由 effect 事件承载（默认技能回退单段伤害）
+  const eff = r.events.find((e) => e.type === 'effect' && e.actor === 'a0' && e.kind === 'damage');
+  assert.ok(eff && eff.type === 'effect');
+  assert.ok((eff.damage ?? 0) > 0);
 });
 
 test('全灭判定：强方一轮获胜', () => {

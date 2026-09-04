@@ -16,5 +16,11 @@
     "name": "绝技·磐石",
     "kind": "ultimate",
     "ratio": 1.5
+  },
+  {
+    "id": "sk_heal",
+    "name": "绝技·莲华",
+    "kind": "ultimate",
+    "ratio": 1.5
   }
 ]

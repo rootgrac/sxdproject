@@ -1,17 +1,20 @@
 /**
- * 确定性回合制战斗内核（M0 原型）。
- * 输入 =（我方阵容，敌方阵容，随机种子，配置），同输入必同结果（§3.4）。
+ * 确定性回合制战斗内核（M1-6：技能 = 效果器列表驱动）。
+ * 输入 =（我方阵容，敌方阵容，随机种子，配置, 技能效果表），同输入必同结果（§3.4）。
  *
  * 规则（占位，M1 数值定稿前）：
  * - 每轮按速度降序行动（同速保持阵容顺序）；死亡单位跳过
- * - 行动时气势 ≥ qiMax → 释放绝技（必中，伤害倍率 skillRatio，气势清零），否则普攻
+ * - 行动时气势 ≥ qiMax → 释放绝技：先发 cast 事件，再按效果器表逐段执行
+ *   （damage 伤害段 / heal 治疗 / buff·debuff 增减益，见 SkillEffectDef）
+ *   绝技技能未配置效果器时回退单段伤害（倍率 = 单位 skillRatio ?? config.skillRatio）
  * - 普攻命中判定：命中率 = acc/(acc+eva)，夹在 [min,max]；命中后自身 +qiGainAttack 气势
- * - 受到伤害 +qiGainHurt 气势；伤害 dmg = atk*ratio - def*defFactor，暴击 ×critMult，下限 1
- * - 目标选择：敌方存活列表首位（九宫格站位/前排在 M1 布阵系统接入）
+ * - 受到伤害 +qiGainHurt 气势；伤害 dmg = effAtk×ratio − effDef×defFactor，暴击 ×critMult，下限 1
+ * - 增减益按属性乘区叠加（buff atk+0.5 时 effAtk = base×1.5），持续 duration 回合（含施放回合）
+ * - 目标选择：敌方存活列表首位（九宫格站位/前排在 M1-5 布阵系统接入）
  * - 一方全灭即胜；超过 maxRounds 判平
  */
 import { Rng } from './rng.ts';
-import type { BattleConfig, BattleEvent, BattleResult, Side, Unit } from './model.ts';
+import type { BattleBuff, BattleConfig, BattleEvent, BattleResult, Side, SkillEffectDef, Unit } from './model.ts';
 import { DEFAULT_BATTLE_CONFIG } from './model.ts';
 
 export interface BattleInput {
@@ -19,6 +22,8 @@ export interface BattleInput {
   allies: Unit[];
   enemies: Unit[];
   config?: Partial<BattleConfig>;
+  /** 技能效果器表：skillId → 效果器列表（M1-6）；缺省技能回退单段伤害 */
+  skillEffects?: Record<string, SkillEffectDef[]>;
 }
 
 function cloneUnit(u: Unit): Unit {
@@ -35,6 +40,8 @@ export function runBattle(input: BattleInput): BattleResult {
   const rng = new Rng(input.seed);
   const events: BattleEvent[] = [];
   const units: Unit[] = [...input.allies.map(cloneUnit), ...input.enemies.map(cloneUnit)];
+  /** 临时状态（增减益）：unitId → buffs */
+  const buffs = new Map<string, BattleBuff[]>();
   let tick = 0;
 
   const sideAlive = (s: Side): boolean => units.some((u) => u.side === s && u.hp > 0);
@@ -44,10 +51,28 @@ export function runBattle(input: BattleInput): BattleResult {
     return units.find((x) => x.side === foe && x.hp > 0) ?? null;
   };
 
-  /** 伤害判定（含暴击），不修改状态 */
-  const rollDamage = (u: Unit, t: Unit, ratio: number): { crit: boolean; damage: number } => {
+  const buffListOf = (u: Unit): BattleBuff[] => {
+    let list = buffs.get(u.id);
+    if (!list) {
+      list = [];
+      buffs.set(u.id, list);
+    }
+    return list;
+  };
+
+  /** 属性乘区（含增减益）：base × (1 + Σmult)；buff 在 [施放回合, untilRound) 内生效 */
+  const effStat = (u: Unit, stat: 'atk' | 'def', round: number): number => {
+    let multSum = 0;
+    for (const b of buffListOf(u)) {
+      if (b.stat === stat && round < b.untilRound) multSum += b.mult;
+    }
+    return u.stats[stat] * (1 + multSum);
+  };
+
+  /** 伤害判定（含暴击与增减益），不修改状态 */
+  const rollDamage = (u: Unit, t: Unit, ratio: number, round: number): { crit: boolean; damage: number } => {
     const crit = rng.chance(u.stats.crit);
-    const raw = u.stats.atk * ratio - t.stats.def * cfg.defFactor;
+    const raw = effStat(u, 'atk', round) * ratio - effStat(t, 'def', round) * cfg.defFactor;
     const damage = Math.max(1, Math.floor(crit ? raw * cfg.critMult : raw));
     return { crit, damage };
   };
@@ -62,31 +87,88 @@ export function runBattle(input: BattleInput): BattleResult {
     }
   };
 
+  const castSkill = (u: Unit, round: number): void => {
+    const skillId = u.skillId || '__ultimate';
+    u.qi = 0;
+    events.push({ type: 'skill', tick: ++tick, round, actor: u.id, skillId, actorQi: u.qi });
+
+    const defined = input.skillEffects?.[skillId];
+    const effects: SkillEffectDef[] =
+      defined && defined.length > 0
+        ? defined
+        : [{ id: '__auto', kind: 'damage', target: 'enemy', ratio: u.skillRatio ?? cfg.skillRatio }];
+
+    for (const fx of effects) {
+      if (fx.kind === 'damage') {
+        const t = firstTargetOf(u);
+        if (!t) break;
+        const { crit, damage } = rollDamage(u, t, fx.ratio ?? 1, round);
+        t.hp -= damage;
+        gainHurtQi(t);
+        events.push({
+          type: 'effect',
+          tick: ++tick,
+          round,
+          actor: u.id,
+          skillId,
+          effectId: fx.id,
+          kind: 'damage',
+          target: t.id,
+          crit,
+          damage,
+        });
+        onKill(t, round);
+      } else if (fx.kind === 'heal') {
+        const healing = Math.min(
+          u.maxHp - u.hp,
+          Math.max(0, Math.floor(effStat(u, 'atk', round) * (fx.ratio ?? 1))),
+        );
+        u.hp += healing;
+        events.push({
+          type: 'effect',
+          tick: ++tick,
+          round,
+          actor: u.id,
+          skillId,
+          effectId: fx.id,
+          kind: 'heal',
+          target: u.id,
+          healing,
+        });
+      } else {
+        // buff / debuff
+        const t = fx.target === 'self' ? u : firstTargetOf(u);
+        if (!t) break;
+        const base = Math.max(1, fx.duration ?? 1);
+        const mult = (fx.kind === 'buff' ? 1 : -1) * (fx.value ?? 0);
+        const untilRound = round + base;
+        buffListOf(t).push({ stat: fx.stat ?? 'atk', mult, untilRound });
+        events.push({
+          type: 'effect',
+          tick: ++tick,
+          round,
+          actor: u.id,
+          skillId,
+          effectId: fx.id,
+          kind: fx.kind,
+          target: t.id,
+          stat: fx.stat ?? 'atk',
+          mult,
+          untilRound,
+        });
+      }
+    }
+  };
+
   const act = (u: Unit, round: number): void => {
     const t = firstTargetOf(u);
     if (!t) return;
 
     if (u.qi >= cfg.qiMax) {
-      // 绝技：必中，气势清零；倍率 = 单位技能配置注入，缺省回退全局 skillRatio
-      u.qi = 0;
-      const { crit, damage } = rollDamage(u, t, u.skillRatio ?? cfg.skillRatio);
-      t.hp -= damage;
-      gainHurtQi(t);
-      events.push({
-        type: 'skill',
-        tick: ++tick,
-        round,
-        actor: u.id,
-        target: t.id,
-        crit,
-        damage,
-        actorQi: u.qi,
-        targetQi: t.qi,
-      });
-      onKill(t, round);
+      castSkill(u, round);
     } else if (rng.chance(hitChanceOf(u.stats, t.stats, cfg))) {
       // 普攻命中
-      const { crit, damage } = rollDamage(u, t, 1);
+      const { crit, damage } = rollDamage(u, t, 1, round);
       t.hp -= damage;
       u.qi = Math.min(cfg.qiMax, u.qi + cfg.qiGainAttack);
       gainHurtQi(t);

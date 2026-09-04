@@ -32,6 +32,29 @@ export interface Unit {
   stats: UnitStats;
 }
 
+/** 技能效果器定义（M1-6，§3.4 配置驱动：新增技能不改代码） */
+export interface SkillEffectDef {
+  id: string;
+  kind: 'damage' | 'heal' | 'buff' | 'debuff';
+  target: 'enemy' | 'self';
+  /** damage/heal 倍率（基于攻击力） */
+  ratio?: number;
+  /** buff/debuff 作用属性 */
+  stat?: 'atk' | 'def';
+  /** buff/debuff 幅度（乘区：+0.5 = +50%）；debuff 取负 */
+  value?: number;
+  /** buff/debuff 持续回合数（含施放回合） */
+  duration?: number;
+}
+
+/** 战斗内临时状态（增减益），作用于属性乘区 */
+export interface BattleBuff {
+  stat: 'atk' | 'def';
+  mult: number;
+  /** 生效回合为 [施放回合, untilRound)，施放回合计为第 1 回合 */
+  untilRound: number;
+}
+
 export interface BattleConfig {
   maxRounds: number;      // 超过判平
   qiMax: number;          // 气势上限
@@ -107,15 +130,30 @@ export type BattleEvent =
       targetQi: number;
     }
   | {
+      /** 绝技施放宣告（cast）；具体效果见随后逐个 effect 事件 */
       type: 'skill';
       tick: number;
       round: number;
       actor: string;
-      target: string;
-      crit: boolean;
-      damage: number;
+      skillId: string;
       actorQi: number;
-      targetQi: number;
+    }
+  | {
+      /** 单个效果器的执行结果（damage/heal/buff/debuff） */
+      type: 'effect';
+      tick: number;
+      round: number;
+      actor: string;
+      skillId: string;
+      effectId: string;
+      kind: 'damage' | 'heal' | 'buff' | 'debuff';
+      target: string;
+      crit?: boolean;
+      damage?: number;
+      healing?: number;
+      stat?: 'atk' | 'def';
+      mult?: number;
+      untilRound?: number;
     }
   | { type: 'death'; tick: number; round: number; unit: string }
   | { type: 'end'; winner: Winner; rounds: number };

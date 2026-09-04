@@ -8,8 +8,8 @@
  * 运行：node tools/m0-demo/run.ts
  */
 import { runBattle } from '../../battle-core/src/engine.ts';
-import { buildUnits } from '../../battle-core/src/setup.ts';
-import type { SkillRow, UnitRow } from '../../battle-core/src/setup.ts';
+import { buildEffects, buildUnits } from '../../battle-core/src/setup.ts';
+import type { SkillEffectRow, SkillRow, UnitRow } from '../../battle-core/src/setup.ts';
 import type { BattleEvent } from '../../battle-core/src/model.ts';
 import { REALM_NAMES } from '../../client/assets/scripts/modules/role/role-core.ts';
 import { clearStage, findStage } from '../../client/assets/scripts/modules/stage/stage-core.ts';
@@ -25,28 +25,30 @@ import { fileURLToPath } from 'node:url';
 const SEED = 20260904;
 const HERE = dirname(fileURLToPath(import.meta.url));
 
-function loadTables(): { unitRows: unknown[]; skillRows: unknown[]; stageRows: unknown[] } {
+function loadTables(): { unitRows: unknown[]; skillRows: unknown[]; stageRows: unknown[]; effectRows: unknown[] } {
   const read = (name: string): unknown[] =>
     JSON.parse(readFileSync(join(HERE, '..', '..', 'config', 'export', `${name}.json`), 'utf8')) as unknown[];
-  return { unitRows: read('unit'), skillRows: read('skill'), stageRows: read('stage') };
+  return { unitRows: read('unit'), skillRows: read('skill'), stageRows: read('stage'), effectRows: read('skill_effect') };
 }
 
 function demoBattle(): void {
-  const { unitRows, skillRows } = loadTables();
+  const { unitRows, skillRows, effectRows } = loadTables();
+  const effects = buildEffects(effectRows as SkillEffectRow[]);
+  const skillNameOf = new Map((skillRows as SkillRow[]).map((s) => [s.id, s.name]));
   const units = buildUnits(unitRows as UnitRow[], skillRows as SkillRow[], 'ally'); // 先以 ally 侧构建全部，随后按序分队
   const allies = units.slice(0, 3).map((u) => ({ ...u, side: 'ally' as const }));
   const enemies = buildUnits(unitRows.slice(3) as UnitRow[], skillRows as SkillRow[], 'enemy');
   const names = (us: { name: string }[]) => us.map((u) => u.name).join('/');
 
-  console.log(`[1] 战斗回放（3v3 · seed = ${SEED} · 配置源 config/export/unit.json + skill.json）`);
+  console.log(`[1] 战斗回放（3v3 · seed = ${SEED} · 配置源 config/export/unit.json + skill.json + skill_effect.json）`);
   console.log(`    我方 ${names(allies)} vs 敌方 ${names(enemies)}`);
-  const result = runBattle({ seed: SEED, allies, enemies });
+  const result = runBattle({ seed: SEED, allies, enemies, skillEffects: effects });
   let qiNote: Record<string, number> = {};
   const nameOf: Record<string, string> = {};
   for (const u of [...allies, ...enemies]) nameOf[u.id] = u.name;
 
   for (const ev of result.events) {
-    const line = describeEvent(ev, qiNote, nameOf);
+    const line = describeEvent(ev, qiNote, nameOf, skillNameOf);
     if (line) console.log(line);
   }
   const verdict =
@@ -54,12 +56,17 @@ function demoBattle(): void {
   console.log(`  战斗结束：${verdict}，共 ${result.rounds} 回合，事件 ${result.events.length} 条`);
 
   // 确定性复跑校验
-  const again = runBattle({ seed: SEED, allies, enemies });
+  const again = runBattle({ seed: SEED, allies, enemies, skillEffects: effects });
   const same = JSON.stringify(again.events) === JSON.stringify(result.events);
   console.log(`  同种子复跑结果一致性：${same ? '✅ 完全一致（可回放）' : '❌ 不一致！'}`);
 }
 
-function describeEvent(ev: BattleEvent, qiNote: Record<string, number>, nameOf: Record<string, string>): string | null {
+function describeEvent(
+  ev: BattleEvent,
+  qiNote: Record<string, number>,
+  nameOf: Record<string, string>,
+  skillNameOf: Map<string, string>,
+): string | null {
   const nm = (id: string): string => nameOf[id] ?? id;
   switch (ev.type) {
     case 'round':
@@ -71,8 +78,17 @@ function describeEvent(ev: BattleEvent, qiNote: Record<string, number>, nameOf: 
       return `  ${nm(ev.actor)} 普攻 ${nm(ev.target)}，造成 ${ev.damage} 伤害${ev.crit ? '【暴击】' : ''}（气 ${ev.actorQi}）`;
     case 'skill':
       qiNote[ev.actor] = ev.actorQi;
-      qiNote[ev.target] = ev.targetQi;
-      return `  ⚡ ${nm(ev.actor)} 绝技迸发！命中 ${nm(ev.target)}，造成 ${ev.damage} 伤害${ev.crit ? '【暴击】' : ''}`;
+      return `  ⚡ ${nm(ev.actor)} 释放绝技「${skillNameOf.get(ev.skillId) ?? ev.skillId}」`;
+    case 'effect':
+      if (ev.kind === 'damage') {
+        return `    └─ 命中 ${nm(ev.target)}，造成 ${ev.damage} 点伤害${ev.crit ? '【暴击】' : ''}`;
+      }
+      if (ev.kind === 'heal') {
+        return `    └─ ✚ ${nm(ev.target)} 恢复 ${ev.healing} 点生命`;
+      }
+      return `    └─ ${ev.kind === 'buff' ? '↑' : '↓'} ${nm(ev.target)} ${ev.stat ?? ''} ${
+        Math.round(Math.abs(ev.mult ?? 0) * 100)
+      }%（持续 ${ev.untilRound !== undefined ? `至第 ${ev.untilRound - 1} 回合` : '?'}）`;
     case 'death':
       return `  ☠ ${nm(ev.unit)} 倒下了`;
     case 'end':
@@ -130,7 +146,8 @@ function dump(mgr: SlotManager): void {
 
 function demoStage(): void {
   console.log('\n[3] 主线推进（第一章 10 关 · 配置 config/export/stage.json · 数值占位）');
-  const { unitRows, skillRows, stageRows } = loadTables();
+  const { unitRows, skillRows, stageRows, effectRows } = loadTables();
+  const effects = buildEffects(effectRows as SkillEffectRow[]);
   const allies = buildUnits(unitRows.slice(0, 3) as UnitRow[], skillRows as SkillRow[], 'ally');
   const ctx: StageClearContext = {
     player: { name: '云骞', level: 1, exp: 0, realm: 0, copper: 0 },
@@ -150,10 +167,10 @@ function demoStage(): void {
       'enemy',
     );
     // 单机推图允许反复挑战当前关（每次新种子；成长数值定稿后失败率会显著下降）
-    let r = runBattle({ seed: seed++, allies, enemies });
+    let r = runBattle({ seed: seed++, allies, enemies, skillEffects: effects });
     let attempts = 1;
     while (r.winner !== 'ally' && attempts < 50) {
-      r = runBattle({ seed: seed++, allies, enemies });
+      r = runBattle({ seed: seed++, allies, enemies, skillEffects: effects });
       attempts++;
     }
     if (r.winner !== 'ally') {

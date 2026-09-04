@@ -1,0 +1,7 @@
+# 技能效果器（M1-6；kind: damage/heal/buff/debuff；target: enemy/self；ratio: damage/heal 倍率；stat+value: buff/debuff 乘区；duration: 回合数）
+id	skill	kind	target	ratio	stat	value	duration
+str	ref:skill.id	str	str	float	str	float	int
+效果ID	所属技能	类型	目标	倍率	属性	幅度	持续回合
+se_1	sk_qi	damage	enemy	1.8		0	0
+se_2	sk_guard	buff	self	0	def	0.5	3
+se_3	sk_heal	heal	self	1.5		0	0

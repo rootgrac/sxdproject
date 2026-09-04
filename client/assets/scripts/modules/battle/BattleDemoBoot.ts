@@ -207,6 +207,31 @@ export class BattleDemoBoot extends Component {
       this.refreshBlock(ev.unit);
       return;
     }
+    if (ev.type === 'skill') {
+      this.log(`⚡ ${ev.actor} 释放绝技`);
+      this.setBig(`⚡ ${ev.actor} 绝技迸发！`);
+      return;
+    }
+    if (ev.type === 'effect') {
+      if (ev.kind === 'damage') {
+        this.hpOf[ev.target] = Math.max(0, (this.hpOf[ev.target] ?? 0) - (ev.damage ?? 0));
+        this.log(`${ev.actor} 绝技命中 ${ev.target}，-${ev.damage}${ev.crit ? '【暴击】' : ''}`);
+        this.setBig(`${ev.target} 受到 ${ev.damage} 点伤害${ev.crit ? ' 暴击！' : ''}`);
+        this.refreshBlock(ev.target);
+      } else if (ev.kind === 'heal') {
+        const hp = Math.min(this.maxHpOf[ev.target] ?? 0, (this.hpOf[ev.target] ?? 0) + (ev.healing ?? 0));
+        this.hpOf[ev.target] = hp;
+        this.log(`✚ ${ev.target} 恢复 ${ev.healing} 点生命`);
+        this.setBig(`✚ ${ev.target} 回春 +${ev.healing}`);
+        this.refreshBlock(ev.target);
+      } else if (ev.kind === 'buff' || ev.kind === 'debuff') {
+        const sign = ev.kind === 'buff' ? '↑' : '↓';
+        const pct = Math.round(Math.abs(ev.mult ?? 0) * 100);
+        this.log(`${sign} ${ev.target} ${ev.stat} ${ev.kind === 'buff' ? '+' : '-'}${pct}%（持续 ${ev.untilRound !== undefined ? `至第 ${ev.untilRound - 1} 回合` : ''}）`);
+        this.setBig(`${sign} ${ev.target} ${ev.kind === 'buff' ? '强化' : '弱化'} ${ev.stat} ${pct}%`);
+      }
+      return;
+    }
     if (ev.type === 'attack') {
       if (!ev.hit) {
         this.log(`${ev.actor} 出手，被 ${ev.target} 闪避`);
@@ -218,12 +243,6 @@ export class BattleDemoBoot extends Component {
         this.refreshBlock(ev.target);
       }
       return;
-    }
-    if (ev.type === 'skill') {
-      this.hpOf[ev.target] = Math.max(0, (this.hpOf[ev.target] ?? 0) - ev.damage);
-      this.log(`⚡ ${ev.actor} 绝技迸发！命中 ${ev.target}，-${ev.damage}${ev.crit ? '【暴击】' : ''}`);
-      this.setBig(`⚡ ${ev.actor} 绝技！ ${ev.target} -${ev.damage}`);
-      this.refreshBlock(ev.target);
     }
   };
 }
