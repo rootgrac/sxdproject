@@ -31,6 +31,8 @@ function itemNameOf(items: ItemDefRow[], itemId: string): string {
 
 const { ccclass } = _decorator;
 
+type HubTab = 'daily' | 'recruit' | 'fate' | 'equip' | 'elite' | 'arena' | 'shop' | 'mail' | 'ach';
+
 const BG_COLOR = new Color(24, 26, 38, 255);
 const PANEL_COLOR = new Color(40, 44, 60, 255);
 const BTN_COLOR = new Color(60, 84, 130, 255);
@@ -110,8 +112,10 @@ export class BattleGameBoot extends Component {
       load('config/fate'),
       load('config/fate_set'),
       load('config/fate_cfg'),
+      load('config/arena'),
+      load('config/achievement'),
     ]).then(
-      ([units, skills, effectRows, stages, recruit, recruitCfg, equip, item, craft, shop, elite, eliteReward, tasks, taskBox, signIn, fate, fateSet, fateCfg]) => ({
+      ([units, skills, effectRows, stages, recruit, recruitCfg, equip, item, craft, shop, elite, eliteReward, tasks, taskBox, signIn, fate, fateSet, fateCfg, arena, achievements]) => ({
         units: units as GameConfigs['units'],
         skills: skills as GameConfigs['skills'],
         effectRows: effectRows as GameConfigs['effectRows'],
@@ -130,6 +134,8 @@ export class BattleGameBoot extends Component {
         fate: fate as GameConfigs['fate'],
         fateSet: fateSet as GameConfigs['fateSet'],
         fateCfg: fateCfg as GameConfigs['fateCfg'],
+        arena: arena as GameConfigs['arena'],
+        achievements: achievements as GameConfigs['achievements'],
       }),
     );
   }
@@ -300,35 +306,45 @@ export class BattleGameBoot extends Component {
     if (this.hubErr) this.hubErr.string = msg;
   }
 
-  private openHub(tab: 'recruit' | 'equip' | 'elite' | 'shop'): void {
+  private openHub(tab: HubTab): void {
     const s = this.session;
     if (!s) return;
     this.clearUi();
-    this.makeLabel(0, 306, '🧘 修行 · 养成（M2 演示）', 20);
+    this.makeLabel(0, 306, '🧘 修行 · 养成（M3 演示）', 20);
     const snap = s.snapshot();
     const realmName = REALM_NAMES[snap.realm] ?? '?';
     const bag = s.bagView().map((b) => `${b.name}×${b.count}`).join(' ') || '（空）';
     const mates = s.partnerView().map((p) => (p.onField ? `★${p.name}` : p.name)).join('、') || '无';
-    this.makeLabel(0, 276, `铜钱 ${snap.copper} · Lv${snap.level} ${realmName}`, 15, DIM_COLOR);
-    this.makeLabel(0, 254, `伙伴：${mates} ｜ 背包：${bag}`, 13, DIM_COLOR);
+    this.makeLabel(0, 278, `铜钱 ${snap.copper} · Lv${snap.level} ${realmName} · 荣誉 ${snap.honor}`, 14, DIM_COLOR);
+    this.makeLabel(0, 256, `伙伴：${mates} ｜ 背包：${bag}`, 12, DIM_COLOR);
     // 顶栏 Tab
-    const tabs: Array<{ id: 'recruit' | 'equip' | 'elite' | 'shop'; label: string }> = [
-      { id: 'recruit', label: '招贤' },
+    const tabs: { id: HubTab; label: string }[] = [
+      { id: 'daily', label: '日常' },
+      { id: 'recruit', label: '寻访' },
+      { id: 'fate', label: '观星' },
       { id: 'equip', label: '装备' },
       { id: 'elite', label: '精英' },
+      { id: 'arena', label: '竞技' },
       { id: 'shop', label: '商店' },
+      { id: 'mail', label: '信箱' },
+      { id: 'ach', label: '成就' },
     ];
-    const xs = [-240, -80, 80, 240];
+    const startX = -330;
     tabs.forEach((t, i) => {
       const active = t.id === tab;
-      this.makeButton(xs[i] ?? 0, 218, 140, 46, t.label, () => this.openHub(t.id), active ? BTN_HI : BTN_COLOR);
+      this.makeButton(startX + i * 88, 222, 80, 40, t.label, () => this.openHub(t.id), active ? BTN_HI : BTN_COLOR);
     });
     this.hubErr = this.makeLabel(0, -250, '', 15, LOSE_COLOR);
     this.makeButton(240, -306, 130, 44, '返回', () => this.renderPlayView(s.snapshot(), ''));
-    if (tab === 'recruit') this.renderHubRecruit();
+    if (tab === 'daily') this.renderHubDaily();
+    else if (tab === 'recruit') this.renderHubRecruit();
+    else if (tab === 'fate') this.renderHubFate();
     else if (tab === 'equip') this.renderHubEquip();
     else if (tab === 'elite') this.renderHubElite();
-    else this.renderHubShop();
+    else if (tab === 'arena') this.renderHubArena();
+    else if (tab === 'shop') this.renderHubShop();
+    else if (tab === 'mail') this.renderHubMail();
+    else this.renderHubAchieve();
   }
 
   private hubRow(y: number, text: string, btn: string | null, cb: (() => void) | null): void {
@@ -462,7 +478,238 @@ export class BattleGameBoot extends Component {
     if (rows.length > max) this.hubRow(168 - max * 52 - 8, `…另有 ${rows.length - max} 项`, null, null);
   }
 
+  // ── M3 面板：日常 / 观星 / 竞技 / 信箱 / 成就 ──────────────
+
+  private renderHubDaily(): void {
+    const s = this.session;
+    if (!s) return;
+    const cfg = s.configsOf();
+    const rows: Array<{ text: string; btn: string | null; cb: (() => void) | null }> = [];
+    // 签到（首位）
+    const si = s.signInStatus();
+    rows.push({
+      text: si.signedToday ? `签到：今日已签（连续 ${si.streak} 天）` : `签到：可领第 ${si.nextDay} 天奖励`,
+      btn: si.signedToday ? null : '签到',
+      cb: si.signedToday ? null : () => this.doSignIn(),
+    });
+    // 任务（两行聚合）
+    const tvs = s.taskView();
+    for (let i = 0; i < tvs.length; i += 3) {
+      const chunk = tvs.slice(i, i + 3).map((t) => `${t.name.slice(0, 4)}${t.done ? '✓' : `${t.current}/${t.target}`}`);
+      rows.push({ text: chunk.join('｜'), btn: null, cb: null });
+    }
+    rows.push({ text: `活跃度 ${s.activeToday()}（完成任务的活跃点）`, btn: null, cb: null });
+    for (const b of cfg.taskBox) {
+      rows.push({ text: `活跃宝箱·${b.threshold}（${b.copper} 铜）`, btn: '领取', cb: () => this.doClaimBox(b.threshold) });
+    }
+    this.renderHubList(rows);
+  }
+
+  private doSignIn(): void {
+    if (this.busy) return;
+    this.busy = true;
+    let msg = '';
+    try {
+      const r = this.session?.signInNow();
+      msg = `签到成功：第 ${r?.day} 天 +${r?.copper} 铜${r?.item ? ` +${itemNameOf(this.session?.configsOf().item ?? [], r.item)}` : ''}`;
+    } catch (e) {
+      msg = e instanceof Error ? e.message : String(e);
+    }
+    this.busy = false;
+    this.openHub('daily');
+    this.flash(msg);
+  }
+
+  private doClaimBox(threshold: number): void {
+    if (this.busy) return;
+    this.busy = true;
+    let msg = '';
+    try {
+      this.session?.claimActiveBox(threshold);
+      msg = `领取活跃宝箱 ${threshold} 成功`;
+    } catch (e) {
+      msg = e instanceof Error ? e.message : String(e);
+    }
+    this.busy = false;
+    this.openHub('daily');
+    this.flash(msg);
+  }
+
+  private renderHubFate(): void {
+    const s = this.session;
+    if (!s) return;
+    const cfg = s.configsOf();
+    const v = s.fateView();
+    const rows: Array<{ text: string; btn: string | null; cb: (() => void) | null }> = [];
+    rows.push({ text: `观星：单抽 ${cfg.fateCfg.cost_single} / 十连 ${cfg.fateCfg.cost_ten}（保底曜华）`, btn: null, cb: null });
+    for (const e of v.equipped) rows.push({ text: `✦ ${e.name} Lv${e.level}`, btn: null, cb: null });
+    rows.push({ text: `加成：攻+${v.bonus.atk} 防+${v.bonus.def} 血+${v.bonus.hp}（空槽 ${v.empty}/8）`, btn: null, cb: null });
+    rows.push({ text: '单抽', btn: '观星 1 次', cb: () => this.doObserve('single') });
+    rows.push({ text: '十连（第 10 抽保底高稀有）', btn: '十连', cb: () => this.doObserve('ten') });
+    this.renderHubList(rows);
+  }
+
+  private doObserve(mode: 'single' | 'ten'): void {
+    if (this.busy) return;
+    this.busy = true;
+    let msg = '';
+    try {
+      const r = this.session?.observeFate(mode);
+      const evs = (r?.events ?? []).map((e) => (e.kind === 'new' ? `获得 ${e.name}` : `精进 ${e.name}→Lv${e.level}`));
+      msg = evs.slice(0, 3).join('；') + (evs.length > 3 ? ` 等 ${evs.length} 项` : '');
+    } catch (e) {
+      msg = e instanceof Error ? e.message : String(e);
+    }
+    this.busy = false;
+    this.openHub('fate');
+    this.flash(msg);
+  }
+
+  private renderHubArena(): void {
+    const s = this.session;
+    if (!s) return;
+    const remaining = s.arenaRemainingToday();
+    const rows: Array<{ text: string; btn: string | null; cb: (() => void) | null }> = [];
+    rows.push({ text: `今日可胜 ${remaining} 场（每日 3 胜，跨日重置）`, btn: null, cb: null });
+    for (const a of s.arenaStatus()) {
+      rows.push({
+        text: `${a.name}（×${a.scale}）胜奖 ${a.rewardCopper} 铜 + 荣誉 ${a.honor}`,
+        btn: remaining > 0 ? '⚔ 挑战' : null,
+        cb: remaining > 0 ? () => this.startArena(a.id) : null,
+      });
+    }
+    this.renderHubList(rows);
+  }
+
+  private renderHubMail(): void {
+    const s = this.session;
+    if (!s) return;
+    const mails = s.mailView();
+    const rows: Array<{ text: string; btn: string | null; cb: (() => void) | null }> = [];
+    rows.push({ text: `未读 ${mails.filter((m) => m.unclaimed).length} / ${mails.length} 封`, btn: mails.some((m) => m.unclaimed) ? '批量领取' : null, cb: () => this.doClaimMailAll() });
+    for (const m of mails.slice(0, 6)) {
+      rows.push({ text: `${m.unclaimed ? '📬' : '📭'} ${m.title}`, btn: m.unclaimed ? '领取' : null, cb: m.unclaimed ? () => this.doClaimMail(m.id) : null });
+    }
+    this.renderHubList(rows);
+  }
+
+  private doClaimMail(mailId: string): void {
+    if (this.busy) return;
+    this.busy = true;
+    let msg = '';
+    try {
+      // 单封领取经由批量实现中的单封语义：直接调用全量（演示期内容少，领取全部）
+      const n = this.session?.claimMailsAll() ?? 0;
+      msg = n > 0 ? `领取成功（${n} 封）` : '无可领取邮件';
+    } catch (e) {
+      msg = e instanceof Error ? e.message : String(e);
+    }
+    this.busy = false;
+    this.openHub('mail');
+    this.flash(msg);
+  }
+
+  private doClaimMailAll(): void {
+    if (this.busy) return;
+    this.busy = true;
+    let msg = '';
+    try {
+      const n = this.session?.claimMailsAll() ?? 0;
+      msg = n > 0 ? `已批量领取 ${n} 封附件` : '无可领取邮件';
+    } catch (e) {
+      msg = e instanceof Error ? e.message : String(e);
+    }
+    this.busy = false;
+    this.openHub('mail');
+    this.flash(msg);
+  }
+
+  private renderHubAchieve(): void {
+    const s = this.session;
+    if (!s) return;
+    const rows: Array<{ text: string; btn: string | null; cb: (() => void) | null }> = [];
+    rows.push({ text: '成就达标自动解锁 → 系统邮件发奖', btn: '检查成就', cb: () => this.doScanAchieve() });
+    for (const a of s.achievementView()) {
+      rows.push({ text: `${a.unlocked ? '🏅' : a.done ? '● 可解锁' : '○'} ${a.name}${a.unlocked ? '（已发奖）' : ''}`, btn: null, cb: null });
+    }
+    for (const c of s.collectionView()) {
+      rows.push({ text: `图鉴·${c.title}：${c.progress.owned}/${c.progress.total}（${c.progress.pct}%）`, btn: null, cb: null });
+    }
+    this.renderHubList(rows);
+  }
+
+  private doScanAchieve(): void {
+    if (this.busy) return;
+    this.busy = true;
+    let msg = '';
+    try {
+      const names = this.session?.achievementScan() ?? [];
+      msg = names.length > 0 ? `成就达成：${names.join('、')}（奖励已发信箱）` : '暂无新成就（继续养成吧）';
+    } catch (e) {
+      msg = e instanceof Error ? e.message : String(e);
+    }
+    this.busy = false;
+    this.openHub('ach');
+    this.flash(msg);
+  }
+
   // ── 战斗（自动播报）───────────────────────────────────────
+
+  private startArena(arenaId: string): void {
+    const s = this.session;
+    if (!s || this.busy) return;
+    let battle;
+    try {
+      battle = s.arenaBattle(arenaId);
+    } catch (e) {
+      this.flash(e instanceof Error ? e.message : String(e));
+      return;
+    }
+    const row = s.configsOf().arena.find((a) => a.id === arenaId);
+    if (!battle || !row) return;
+    this.busy = true;
+    this.clearUi();
+    this.makeLabel(0, 300, `竞技场 · ${row.name}（胜奖 铜${row.reward_copper} 荣誉${row.honor}）`, 18);
+    this.logLabel = this.makeLabel(0, 40, '开战！', 18);
+    const result = runBattle({
+      seed: 7000 + row.scale * 100,
+      allies: battle.allies,
+      enemies: battle.enemies,
+      skillEffects: s.skillEffectsOf(),
+    });
+    const win = result.winner === 'ally';
+    const nameOf: Record<string, string> = {};
+    for (const u of [...battle.allies, ...battle.enemies]) nameOf[u.id] = u.name;
+    const lines = result.events.map((ev) => this.eventToText(ev, nameOf)).filter((t): t is string => t !== null);
+    const show = lines.length > 30 ? [...lines.slice(0, 15), '…（战况激烈，略）…', ...lines.slice(-13)] : lines;
+
+    let i = 0;
+    const onTick = (): void => {
+      if (!this.isValid) return;
+      if (i < show.length) {
+        this.logLabel!.string = show[i];
+        i++;
+        return;
+      }
+      this.unschedule(onTick);
+      let msg = '战败…（胜场不扣，可再战）';
+      if (win) {
+        try {
+          const r = s.arenaWin(arenaId);
+          msg = `胜利！+${r.copper} 铜 +${r.honor} 荣誉${r.achievements.length > 0 ? ` · 成就达成：${r.achievements.join('、')}（邮件已发）` : ''}`;
+        } catch (e) {
+          msg = `结算异常：${e instanceof Error ? e.message : String(e)}`;
+        }
+      }
+      this.logLabel!.color = win ? WIN_COLOR : LOSE_COLOR;
+      this.logLabel!.string = msg;
+      this.busy = false;
+      this.makeButton(0, -140, 260, 52, '返回竞技场', () => {
+        this.openHub('arena');
+      });
+    };
+    this.schedule(onTick, 0.3);
+  }
 
   private startElite(eliteId: string): void {
     const s = this.session;

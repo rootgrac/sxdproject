@@ -87,6 +87,7 @@ export interface SessionSnapshot {
   realm: number;
   exp: number;
   copper: number;
+  honor: number;
   chapter: number;
   node: number;
 }
@@ -152,6 +153,7 @@ export class GameSession {
       realm: player.realm,
       exp: player.exp,
       copper: player.copper,
+      honor: player.honor,
       chapter: progress.chapter,
       node: progress.node,
     };
