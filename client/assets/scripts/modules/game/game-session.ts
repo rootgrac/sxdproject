@@ -298,6 +298,7 @@ export class GameSession {
     const player = data.player as RoleState & { copper: number };
     clearStage({ player, progress: data.progress }, this.configs.stages, stage);
     this.notifyToday('stage_win');
+    this.maybeScanAchievements();
     this.manager?.markDirty();
     this.flushNow();
   }
@@ -354,6 +355,7 @@ export class GameSession {
     this.notifyToday('recruit');
     this.manager?.markDirty();
     this.flushNow();
+    this.maybeScanAchievements();
     return { results: outcome.results, joined };
   }
 
@@ -467,6 +469,7 @@ export class GameSession {
     recordChallenge(data.daily as DailyState, this.dateKeyOf(), elite);
     grantRewards(data.bag as BagItem[], this.configs.eliteReward, eliteId);
     this.notifyToday('elite_win');
+    this.maybeScanAchievements();
     this.manager?.markDirty();
     this.flushNow();
   }
@@ -509,6 +512,7 @@ export class GameSession {
     if (reward.item) addItem(data.bag as BagItem[], reward.item, 1);
     this.manager?.markDirty();
     this.flushNow();
+    this.maybeScanAchievements();
     return { day: r.day, streak: r.streak, copper: reward.copper, item: reward.item };
   }
 
@@ -570,6 +574,7 @@ export class GameSession {
     }
     this.manager?.markDirty();
     this.flushNow();
+    this.maybeScanAchievements();
     return { results: outcome.results.map((x) => ({ fateId: x.unit, rarity: x.rarity })), events, cost: outcome.cost };
   }
 
@@ -653,6 +658,15 @@ export class GameSession {
       fateCount: (data.fates as FateState[]).length,
       honor: data.player.honor,
     };
+  }
+
+  /** 轻量成就扫描（关键操作后自动调用；仅新解锁发邮件，幂等） */
+  private maybeScanAchievements(): void {
+    try {
+      this.achievementScan();
+    } catch {
+      // 扫描失败不影响主流程
+    }
   }
 
   /** 扫描并解锁新达标成就：奖励以系统邮件发放（邮箱领取），返回新达成名称 */
