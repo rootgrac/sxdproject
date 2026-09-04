@@ -1,0 +1,44 @@
+[
+  {
+    "id": "t_stage",
+    "name": "通关主线关卡",
+    "type": "stage_win",
+    "target": 3,
+    "active": 10
+  },
+  {
+    "id": "t_elite",
+    "name": "挑战精英副本",
+    "type": "elite_win",
+    "target": 1,
+    "active": 10
+  },
+  {
+    "id": "t_recruit",
+    "name": "招募伙伴",
+    "type": "recruit",
+    "target": 1,
+    "active": 10
+  },
+  {
+    "id": "t_enhance",
+    "name": "强化装备",
+    "type": "enhance",
+    "target": 1,
+    "active": 10
+  },
+  {
+    "id": "t_craft",
+    "name": "打造装备",
+    "type": "craft",
+    "target": 1,
+    "active": 10
+  },
+  {
+    "id": "t_shop",
+    "name": "商店购物",
+    "type": "shop",
+    "target": 1,
+    "active": 10
+  }
+]

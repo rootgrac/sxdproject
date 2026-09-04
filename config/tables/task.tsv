@@ -1,0 +1,11 @@
+# 每日任务（M3-2：每日 0 点按本地日期重置；type 与系统事件对应）
+
+id	name	type	target	active
+str	str	str	int	int
+任务ID	名称	事件类型(stage_win/elite_win/recruit/enhance/craft/shop)	目标次数	活跃度
+t_stage	通关主线关卡	stage_win	3	10
+t_elite	挑战精英副本	elite_win	1	10
+t_recruit	招募伙伴	recruit	1	10
+t_enhance	强化装备	enhance	1	10
+t_craft	打造装备	craft	1	10
+t_shop	商店购物	shop	1	10

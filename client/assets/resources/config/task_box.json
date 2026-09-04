@@ -1,0 +1,14 @@
+[
+  {
+    "threshold": 20,
+    "copper": 1000
+  },
+  {
+    "threshold": 40,
+    "copper": 2500
+  },
+  {
+    "threshold": 60,
+    "copper": 5000
+  }
+]

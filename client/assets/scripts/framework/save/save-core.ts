@@ -14,7 +14,7 @@
  */
 import { sha256Hex } from './sha256';
 
-export const CURRENT_SAVE_VERSION = 4;
+export const CURRENT_SAVE_VERSION = 5;
 
 export interface SaveMeta {
   createdAt: number;
@@ -42,8 +42,14 @@ export interface SaveData {
   bag: unknown[];
   /** M2 上阵配置：伙伴位（主角常驻不占位）；值为伙伴实例 uid（v3 起） */
   party: { partnerSlots: (string | null)[] };
-  /** M2 每日状态（精英次数等；v4 起，按本地日历 dateKey 惰性重置） */
-  daily: { dateKey: string; elites: Record<string, number> };
+  /** 每日状态（v4 elites；v5 起扩展 tasks/claimedBoxes/signIn；按 dateKey 惰性重置） */
+  daily: {
+    dateKey: string;
+    elites: Record<string, number>;
+    tasks: Record<string, number>;
+    claimedBoxes: number[];
+    signIn: { streak: number; lastKey: string };
+  };
   progress: { chapter: number; node: number; towerBest: number };
   achievements: { unlocked: string[]; claimed: string[] };
   mailbox: unknown[];
@@ -62,7 +68,7 @@ export function createSaveData(name = '无名散修'): SaveData {
     equips: [],
     bag: [],
     party: { partnerSlots: [null, null] },
-    daily: { dateKey: '', elites: {} },
+    daily: { dateKey: '', elites: {}, tasks: {}, claimedBoxes: [], signIn: { streak: 0, lastKey: '' } },
     progress: { chapter: 1, node: 1, towerBest: 0 },
     achievements: { unlocked: [], claimed: [] },
     mailbox: [],
@@ -126,6 +132,23 @@ const migrations: Record<number, Migration> = {
     const daily = raw.daily as { dateKey?: unknown; elites?: unknown } | undefined;
     const elites = daily && typeof daily.elites === 'object' && daily.elites !== null ? { ...(daily.elites as Record<string, number>) } : {};
     next.daily = { dateKey: (daily && typeof daily.dateKey === 'string' ? daily.dateKey : ''), elites };
+    return next;
+  },
+  // v4 → v5：daily 扩展 tasks/claimedBoxes/signIn（M3 每日任务与签到）
+  4: (raw) => {
+    const next = { ...raw, saveVersion: 5 };
+    const daily = raw.daily as { dateKey?: unknown; elites?: unknown; tasks?: unknown; claimedBoxes?: unknown; signIn?: unknown } | undefined;
+    const elites = daily && typeof daily.elites === 'object' && daily.elites !== null ? { ...(daily.elites as Record<string, number>) } : {};
+    const tasks = daily && typeof daily.tasks === 'object' && daily.tasks !== null ? { ...(daily.tasks as Record<string, number>) } : {};
+    const boxes = daily && Array.isArray(daily.claimedBoxes) ? (daily.claimedBoxes as number[]).slice() : [];
+    const si = daily && typeof daily.signIn === 'object' && daily.signIn !== null ? (daily.signIn as { streak?: number; lastKey?: string }) : null;
+    next.daily = {
+      dateKey: (daily && typeof daily.dateKey === 'string' ? daily.dateKey : ''),
+      elites,
+      tasks,
+      claimedBoxes: boxes,
+      signIn: { streak: si && typeof si.streak === 'number' ? si.streak : 0, lastKey: si && typeof si.lastKey === 'string' ? si.lastKey : '' },
+    };
     return next;
   },
 };

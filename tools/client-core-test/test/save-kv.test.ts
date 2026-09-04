@@ -132,7 +132,7 @@ test('版本迁移：v1 → 当前版本链式升级（mailbox + party + daily�
   assert.deepEqual(r.data.party.partnerSlots, [null, null]); // v3 party 就位
   assert.equal(r.data.player.level, 12); // 旧数据完整保留
   assert.deepEqual(r.data.party.partnerSlots, [null, null]);
-  assert.deepEqual(r.data.daily, { dateKey: '', elites: {} }); // v4 daily 就位
+  assert.deepEqual(r.data.daily, { dateKey: '', elites: {}, tasks: {}, claimedBoxes: [], signIn: { streak: 0, lastKey: '' } }); // v4 daily 就位
   const snap = decodeFile(kv.raw('slot1.backup_v1.json') as string).data;
   assert.equal(snap.saveVersion, 1); // 迁移前原始档已另存
 });
@@ -146,7 +146,7 @@ test('版本迁移：v2（无 party）→ 当前版本补 party 槽位', () => {
   assert.ok(r);
   assert.equal(r.data.saveVersion, CURRENT_SAVE_VERSION);
   assert.deepEqual(r.data.party.partnerSlots, [null, null]);
-  assert.deepEqual(r.data.daily, { dateKey: '', elites: {} });
+  assert.deepEqual(r.data.daily, { dateKey: '', elites: {}, tasks: {}, claimedBoxes: [], signIn: { streak: 0, lastKey: '' } });
 });
 
 test('版本迁移：v3（无 daily）→ v4 补每日状态', () => {
@@ -157,7 +157,7 @@ test('版本迁移：v3（无 daily）→ v4 补每日状态', () => {
   const r = store.read();
   assert.ok(r);
   assert.equal(r.data.saveVersion, CURRENT_SAVE_VERSION);
-  assert.deepEqual(r.data.daily, { dateKey: '', elites: {} });
+  assert.deepEqual(r.data.daily, { dateKey: '', elites: {}, tasks: {}, claimedBoxes: [], signIn: { streak: 0, lastKey: '' } });
 });
 
 test('summary 状态：ok / recoverable / empty / corrupt', () => {
