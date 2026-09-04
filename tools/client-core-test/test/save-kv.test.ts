@@ -110,7 +110,7 @@ test('create 保护：占用槽位或更高版本档拒绝覆盖', () => {
   assert.equal(store.read()?.data.player.name, '丁');
 });
 
-test('版本迁移：v1 → v2 补 mailbox、另存 backup_v1、迁移后立即写盘', () => {
+test('版本迁移：v1 → v3 链式升级（mailbox + party）', () => {
   const { kv, store } = mk();
   const v1 = {
     saveVersion: 1,
@@ -121,7 +121,7 @@ test('版本迁移：v1 → v2 补 mailbox、另存 backup_v1、迁移后立即�
     bag: [{ id: 'potion_s', count: 5 }],
     progress: { chapter: 2, node: 5, towerBest: 0 },
     achievements: { unlocked: [], claimed: [] },
-    // 无 mailbox —— v1 特征
+    // 无 mailbox、无 party —— v1 特征
   };
   kv.set('slot1.json', encodeFile(v1));
   const r = store.read();
@@ -129,11 +129,21 @@ test('版本迁移：v1 → v2 补 mailbox、另存 backup_v1、迁移后立即�
   assert.equal(r.migrated, true);
   assert.equal(r.data.saveVersion, CURRENT_SAVE_VERSION);
   assert.deepEqual(r.data.mailbox, []);
-  assert.equal(r.data.player.level, 12); // 旧数据保留
+  assert.deepEqual(r.data.party.partnerSlots, [null, null]); // v3 party 就位
+  assert.equal(r.data.player.level, 12); // 旧数据完整保留
   const snap = decodeFile(kv.raw('slot1.backup_v1.json') as string).data;
   assert.equal(snap.saveVersion, 1); // 迁移前原始档已另存
-  const r2 = store.read();
-  assert.ok(r2 && r2.migrated === false);
+});
+
+test('版本迁移：v2（无 party）→ v3 补 party 槽位', () => {
+  const { kv, store } = mk();
+  const v2 = { ...createSaveData('旧档'), saveVersion: 2 } as unknown as Record<string, unknown>;
+  delete (v2 as { party?: unknown }).party;
+  kv.set('slot1.json', encodeFile(v2 as never));
+  const r = store.read();
+  assert.ok(r);
+  assert.equal(r.data.saveVersion, 3);
+  assert.deepEqual(r.data.party.partnerSlots, [null, null]);
 });
 
 test('summary 状态：ok / recoverable / empty / corrupt', () => {

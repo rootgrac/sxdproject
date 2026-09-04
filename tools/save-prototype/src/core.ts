@@ -25,7 +25,7 @@ import {
 } from 'node:fs';
 import { join } from 'node:path';
 
-export const CURRENT_SAVE_VERSION = 2;
+export const CURRENT_SAVE_VERSION = 3;
 
 export interface SaveMeta {
   createdAt: number;
@@ -51,10 +51,15 @@ export interface SaveData {
   partners: unknown[];
   equips: unknown[];
   bag: unknown[];
+  /** M2 上阵配置：伙伴位（主角常驻不占位）；值为伙伴实例 uid（v3 起） */
+  party: { partnerSlots: (string | null)[] };
   progress: { chapter: number; node: number; towerBest: number };
   achievements: { unlocked: string[]; claimed: string[] };
   mailbox: unknown[];
 }
+
+/** 上阵伙伴位数量（主角 + N 伙伴出战） */
+export const PARTNER_SLOT_COUNT = 2;
 
 export function createSaveData(name = '无名散修'): SaveData {
   const now = Date.now();
@@ -65,6 +70,7 @@ export function createSaveData(name = '无名散修'): SaveData {
     partners: [],
     equips: [],
     bag: [],
+    party: { partnerSlots: [null, null] },
     progress: { chapter: 1, node: 1, towerBest: 0 },
     achievements: { unlocked: [], claimed: [] },
     mailbox: [],
@@ -115,6 +121,15 @@ const migrations: Record<number, Migration> = {
   1: (raw) => {
     const next = { ...raw, saveVersion: 2 };
     if (!Array.isArray(next.mailbox)) next.mailbox = [];
+    return next;
+  },
+  // v2 → v3：新增 party 上阵配置（M2 伙伴系统）
+  2: (raw) => {
+    const next = { ...raw, saveVersion: 3 };
+    const party = raw.party as { partnerSlots?: unknown } | undefined;
+    const slots = party && Array.isArray(party.partnerSlots) ? party.partnerSlots : [null, null];
+    while (slots.length < PARTNER_SLOT_COUNT) slots.push(null);
+    next.party = { partnerSlots: slots.slice(0, PARTNER_SLOT_COUNT) };
     return next;
   },
 };
