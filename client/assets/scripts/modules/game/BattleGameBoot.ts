@@ -252,7 +252,9 @@ export class BattleGameBoot extends Component {
     this.renderPlayView(snap, note);
   }
 
+  /** 游戏内面板：进入本视图前总是清理旧 UI（防叠加；renderPlay/openHub 返回等入口共用） */
   private renderPlayView(snap: SessionSnapshot, note: string): void {
+    this.clearUi();
     const s = this.session;
     if (!s) return;
     const done = snap.node === 0;
