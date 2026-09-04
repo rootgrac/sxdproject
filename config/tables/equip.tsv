@@ -1,0 +1,13 @@
+# 装备表（M2-3：6 部位占位；属性为基础值，强化每级 +10% 向下取整）
+
+id	slot	name	atk	def	hp
+str	str	str	int	int	int
+装备ID	部位(weapon/armor/head/boots/charm/orb)	装备名	攻击	防御	生命
+eq_w1	weapon	青锋剑	30	0	0
+eq_w2	weapon	重岳刀	50	0	0
+eq_a1	armor	棉布护身	0	20	0
+eq_a2	armor	玄铁甲	0	45	0
+eq_h1	head	素纱冠	0	10	0
+eq_b1	boots	踏云靴	5	0	0
+eq_c1	charm	避尘佩	10	5	0
+eq_o1	orb	聚灵珠	0	0	300
