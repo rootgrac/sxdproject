@@ -12,7 +12,8 @@
     "skills": [
       "sk_basic",
       "sk_qi"
-    ]
+    ],
+    "recruit_level": 0
   },
   {
     "id": "u002",
@@ -27,7 +28,8 @@
     "skills": [
       "sk_basic",
       "sk_heal"
-    ]
+    ],
+    "recruit_level": 0
   },
   {
     "id": "u003",
@@ -42,7 +44,8 @@
     "skills": [
       "sk_basic",
       "sk_guard"
-    ]
+    ],
+    "recruit_level": 0
   },
   {
     "id": "u004",
@@ -57,7 +60,8 @@
     "skills": [
       "sk_basic",
       "sk_qi"
-    ]
+    ],
+    "recruit_level": 0
   },
   {
     "id": "u005",
@@ -72,7 +76,8 @@
     "skills": [
       "sk_basic",
       "sk_qi"
-    ]
+    ],
+    "recruit_level": 0
   },
   {
     "id": "u006",
@@ -87,6 +92,55 @@
     "skills": [
       "sk_basic",
       "sk_guard"
-    ]
+    ],
+    "recruit_level": 0
+  },
+  {
+    "id": "u101",
+    "name": "白纾",
+    "hp": 900,
+    "atk": 135,
+    "def": 55,
+    "spd": 120,
+    "acc": 1,
+    "eva": 0.1,
+    "crit": 0.1,
+    "skills": [
+      "sk_basic",
+      "sk_qi"
+    ],
+    "recruit_level": 1
+  },
+  {
+    "id": "u102",
+    "name": "陆沉舟",
+    "hp": 1300,
+    "atk": 100,
+    "def": 100,
+    "spd": 85,
+    "acc": 1,
+    "eva": 0.05,
+    "crit": 0.05,
+    "skills": [
+      "sk_basic",
+      "sk_guard"
+    ],
+    "recruit_level": 1
+  },
+  {
+    "id": "u103",
+    "name": "苏挽月",
+    "hp": 800,
+    "atk": 160,
+    "def": 35,
+    "spd": 135,
+    "acc": 0.95,
+    "eva": 0.15,
+    "crit": 0.15,
+    "skills": [
+      "sk_basic",
+      "sk_heal"
+    ],
+    "recruit_level": 15
   }
 ]

@@ -1,0 +1,6 @@
+# 招贤阁配置（数值占位，产品可调）
+
+cost_single	cost_ten	guarantee_rarity
+int	int	int
+单抽铜钱	十连铜钱	保底稀有度
+800	7200	2

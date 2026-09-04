@@ -1,16 +1,14 @@
-# 表头三行（字段名/类型/注释）｜ 首列 = 主键
+# 单位表（主角/敌人/招募伙伴；recruit_level>0 = 可招募，值为主角等级门槛）
 
-# 类型：str / int / float / bool / str[] / int[]（单元格内 `;` 分隔）
-#       跨表引用：ref:<表名>.<列名>（如 ref:skill.id），导出时自动校验引用存在
-# 空单元格取默认值（str="" / int=0 / float=0 / bool=false / 数组=[]）
-# 行首 # 为表级注释；空行忽略。导出命令见 tools/excel2json/README.md
-
-id	name	hp	atk	def	spd	acc	eva	crit	skills
-str	str	int	int	int	int	float	float	float	ref:skill.id
-角色ID	名字	生命	攻击	防御	速度	命中	闪避	暴击率	技能列表（引用 skill.id）
-u001	云骞	1000	120	60	110	1	0.05	0.15	sk_basic;sk_qi
-u002	洛璃	850	150	40	125	0.95	0.1	0.05	sk_basic;sk_heal
-u003	沈砚	1200	90	90	95	1	0.05	0.1	sk_basic;sk_guard
-u004	枯木妖	900	110	50	100	0.9	0.15	0.05	sk_basic;sk_qi
-u005	赤目妖	800	130	35	130	0.95	0.05	0.2	sk_basic;sk_qi
-u006	黑风妖	1000	100	70	90	0.95	0.1	0.05	sk_basic;sk_guard
+id	name	hp	atk	def	spd	acc	eva	crit	skills	recruit_level
+str	str	int	int	int	int	float	float	float	ref:skill.id	int
+角色ID	名字	生命	攻击	防御	速度	命中	闪避	暴击率	技能	招募解锁等级(0=非招募池)
+u001	云骞	1000	120	60	110	1	0.05	0.15	sk_basic;sk_qi	0
+u002	洛璃	850	150	40	125	0.95	0.1	0.05	sk_basic;sk_heal	0
+u003	沈砚	1200	90	90	95	1	0.05	0.1	sk_basic;sk_guard	0
+u004	枯木妖	900	110	50	100	0.9	0.15	0.05	sk_basic;sk_qi	0
+u005	赤目妖	800	130	35	130	0.95	0.05	0.2	sk_basic;sk_qi	0
+u006	黑风妖	1000	100	70	90	0.95	0.1	0.05	sk_basic;sk_guard	0
+u101	白纾	900	135	55	120	1	0.1	0.1	sk_basic;sk_qi	1
+u102	陆沉舟	1300	100	100	85	1	0.05	0.05	sk_basic;sk_guard	1
+u103	苏挽月	800	160	35	135	0.95	0.15	0.15	sk_basic;sk_heal	15

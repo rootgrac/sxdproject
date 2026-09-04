@@ -1,0 +1,17 @@
+[
+  {
+    "unit": "u101",
+    "weight": 50,
+    "rarity": 1
+  },
+  {
+    "unit": "u102",
+    "weight": 40,
+    "rarity": 1
+  },
+  {
+    "unit": "u103",
+    "weight": 10,
+    "rarity": 2
+  }
+]
