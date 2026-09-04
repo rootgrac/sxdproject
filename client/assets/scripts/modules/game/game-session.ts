@@ -683,4 +683,28 @@ export class GameSession {
       done: scanAchievements([a], [], stats).length > 0,
     }));
   }
+
+  /** 图鉴视图（伙伴=可招募单位/装备/命格三类） */
+  collectionView(): { key: string; title: string; progress: { owned: number; total: number; pct: number }; entries: { id: string; name: string; owned: boolean }[] }[] {
+    const data = this.guardData();
+    const partnerIds = new Set((data.partners as PartnerState[]).map((p) => p.unitId));
+    const equipIds = new Set((data.equips as EquipState[]).map((e) => e.equipId));
+    const fateIds = new Set((data.fates as FateState[]).map((f) => f.fateId));
+    const recruitUnits = this.configs.units.filter((u) => (u.recruit_level ?? 0) > 0);
+    const sets: { key: string; title: string; owned: ReadonlySet<string>; entries: { id: string; name: string }[] }[] = [
+      { key: 'partner', title: '伙伴', owned: partnerIds, entries: recruitUnits.map((u) => ({ id: u.id, name: u.name })) },
+      { key: 'equip', title: '装备', owned: equipIds, entries: this.configs.equip.map((e) => ({ id: e.id, name: e.name })) },
+      { key: 'fate', title: '命格', owned: fateIds, entries: this.configs.fate.map((f) => ({ id: f.id, name: f.name })) },
+    ];
+    const countOwned = (owned: ReadonlySet<string>, all: { id: string }[]): number => all.filter((e) => owned.has(e.id)).length;
+    return sets.map((s) => {
+      const ownedCount = countOwned(s.owned, s.entries);
+      return {
+        key: s.key,
+        title: s.title,
+        progress: { owned: ownedCount, total: s.entries.length, pct: s.entries.length === 0 ? 0 : Math.round((ownedCount / s.entries.length) * 100) },
+        entries: s.entries.map((e) => ({ ...e, owned: s.owned.has(e.id) })),
+      };
+    });
+  }
 }
