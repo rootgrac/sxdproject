@@ -210,6 +210,7 @@ export class BattleGameBoot extends Component {
     if (!s) return;
     this.makeLabel(0, 300, '仙途 HD · M1 主线闭环演示（存档+养成+推图）', 20);
     this.makeLabel(0, 268, '选择存档：没有有效档时点「新档」创建（同名槽位请先删除）', 14, DIM_COLOR);
+    this.makeLabel(0, 240, '进入后推图赚钱，再点「🧘 修行」完成每日循环（签到/任务/宝箱/观星/竞技）', 13, DIM_COLOR);
 
     const slots = s.slotList();
     const slotNames: Record<string, string> = { slot1: '槽位一', slot2: '槽位二', slot3: '槽位三' };
